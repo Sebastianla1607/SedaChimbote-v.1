@@ -6,8 +6,7 @@ Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo d
 
 **Versión:** 1.0  
 **Última actualización:** Mayo 2026  
-**Autor:** Equipo de Desarrollo  
-**Repositorio:** [https://github.com/sedachimbote/reclamos-ia](https://github.com/sedachimbote/reclamos-ia)
+**Autor:** Ledesma Arana CLaudio
 
 ---
 
@@ -54,7 +53,7 @@ Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo d
   - [11. Referencias y comandos útiles](#11-referencias-y-comandos-útiles)
     - [Comandos para mantener el sistema en producción](#comandos-para-mantener-el-sistema-en-producción)
     - [Enlaces útiles](#enlaces-útiles)
-  - [✅ ¡Fin del manual!](#-fin-del-manual)
+  - [¡Fin del manual!](#fin-del-manual)
 
 ---
 
@@ -604,7 +603,7 @@ VITE_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 
 ---
 
-## ✅ ¡Fin del manual!
+## ¡Fin del manual!
 
 Este documento está diseñado para que **cualquier desarrollador o administrador de sistemas** pueda poner en marcha el sistema completo desde cero, incluso en un entorno de producción real. Si sigues estos pasos al pie de la letra, tendrás una plataforma robusta, escalable y segura para gestionar reclamos con inteligencia artificial en SEDACHIMBOTE.
 
