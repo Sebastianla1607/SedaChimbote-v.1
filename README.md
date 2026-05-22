@@ -6,10 +6,10 @@ Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo d
 
 **Versión:** 1.0  
 **Última actualización:** Mayo 2026  
-**Autor:** Equipo de Desarrollo  
+**Autor:** Ledesma Arana Claudi  
 ---
 
-## 📋 Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [SedaChimbote-v.1](#sedachimbote-v1)
   - [Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo de vida de Tickets de reclamos de una empresa que ofrece servicios.](#una-appweb-que-intenta-mejorar-optimizar-y-gestionar-de-mejor-manera-el-ciclo-de-vida-de-tickets-de-reclamos-de-una-empresa-que-ofrece-servicios)
@@ -42,17 +42,17 @@ Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo d
   - [8. Manejo de WebSockets (Socket.io) en producción](#8-manejo-de-websockets-socketio-en-producción)
   - [9. Variables de entorno completas (ejemplo)](#9-variables-de-entorno-completas-ejemplo)
   - [10. Solución de problemas comunes (Troubleshooting)](#10-solución-de-problemas-comunes-troubleshooting)
-    - [❌ Error: `PrismaClientInitializationError` – No se puede conectar a la base de datos](#-error-prismaclientinitializationerror--no-se-puede-conectar-a-la-base-de-datos)
-    - [❌ Error: `JWT_SECRET must be provided`](#-error-jwt_secret-must-be-provided)
-    - [❌ Error: `403 Forbidden` al cargar fotos a la API](#-error-403-forbidden-al-cargar-fotos-a-la-api)
-    - [❌ Error: `CORS` en peticiones desde el frontend](#-error-cors-en-peticiones-desde-el-frontend)
-    - [❌ Error: `Socket.io` se desconecta cada cierto tiempo](#-error-socketio-se-desconecta-cada-cierto-tiempo)
-    - [❌ Error: `Gemini API quota exceeded`](#-error-gemini-api-quota-exceeded)
-    - [❌ Error: Los seeders fallan por duplicados](#-error-los-seeders-fallan-por-duplicados)
+    - [ Error: `PrismaClientInitializationError` – No se puede conectar a la base de datos](#-error-prismaclientinitializationerror--no-se-puede-conectar-a-la-base-de-datos)
+    - [ Error: `JWT_SECRET must be provided`](#-error-jwt_secret-must-be-provided)
+    - [ Error: `403 Forbidden` al cargar fotos a la API](#-error-403-forbidden-al-cargar-fotos-a-la-api)
+    - [ Error: `CORS` en peticiones desde el frontend](#-error-cors-en-peticiones-desde-el-frontend)
+    - [ Error: `Socket.io` se desconecta cada cierto tiempo](#-error-socketio-se-desconecta-cada-cierto-tiempo)
+    - [ Error: `Gemini API quota exceeded`](#-error-gemini-api-quota-exceeded)
+    - [ Error: Los seeders fallan por duplicados](#-error-los-seeders-fallan-por-duplicados)
   - [11. Referencias y comandos útiles](#11-referencias-y-comandos-útiles)
     - [Comandos para mantener el sistema en producción](#comandos-para-mantener-el-sistema-en-producción)
     - [Enlaces útiles](#enlaces-útiles)
-  - [✅ ¡Fin del manual!](#-fin-del-manual)
+  - [¡Fin del manual!](#-fin-del-manual)
 
 ---
 
