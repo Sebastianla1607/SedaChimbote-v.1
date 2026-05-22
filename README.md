@@ -2,21 +2,19 @@
 Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo de vida de Tickets de reclamos de una empresa que ofrece servicios.
 ---
 
-# 📘 Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE
+# Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE
 
 **Versión:** 1.0  
 **Última actualización:** Mayo 2026  
 **Autor:** Equipo de Desarrollo  
-**Repositorio:** [https://github.com/sedachimbote/reclamos-ia](https://github.com/sedachimbote/reclamos-ia)
-
 ---
 
 ## 📋 Tabla de Contenidos
 
 - [SedaChimbote-v.1](#sedachimbote-v1)
   - [Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo de vida de Tickets de reclamos de una empresa que ofrece servicios.](#una-appweb-que-intenta-mejorar-optimizar-y-gestionar-de-mejor-manera-el-ciclo-de-vida-de-tickets-de-reclamos-de-una-empresa-que-ofrece-servicios)
-- [📘 Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE](#-manual-de-despliegue--sistema-de-gestión-de-reclamos-sedachimbote)
-  - [📋 Tabla de Contenidos](#-tabla-de-contenidos)
+- [ Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE](#-manual-de-despliegue--sistema-de-gestión-de-reclamos-sedachimbote)
+  - [ Tabla de Contenidos](#-tabla-de-contenidos)
   - [1. Requisitos previos](#1-requisitos-previos)
   - [2. Estructura del proyecto](#2-estructura-del-proyecto)
   - [3. Configuración del entorno de desarrollo](#3-configuración-del-entorno-de-desarrollo)
