@@ -7,11 +7,18 @@ dotenv.config()
 const app = express()
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 
 const authRoutes = require('./routes/auth.routes')
+const ticketRoutes = require('./routes/ticket.routes')
+const triageRoutes = require('./routes/triage.routes')
+
 app.use('/api/auth', authRoutes)
+app.use('/api/tickets', ticketRoutes)
+app.use('/api/triage', triageRoutes)
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'Servidor SEDACHIMBOTE funcionando ✅' })
 })
+
+module.exports = app

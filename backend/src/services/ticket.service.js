@@ -90,3 +90,47 @@ const getClientTickets = async (userId) => {
     select: {
       id: true,
       code: true,
+      description: true,
+      status: true,
+      priority: true,
+      ai_category: true,
+      created_at: true,
+      due_date: true,
+      assigned_esp: {
+        select: { access_code: true }
+      }
+    }
+  })
+
+  return tickets.map(ticket => ({
+    ...ticket,
+    days_elapsed: Math.floor((new Date() - new Date(ticket.created_at)) / (1000 * 60 * 60 * 24))
+  }))
+}
+
+const getTicketDetail = async (ticketId, userId, role) => {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: {
+      created_by: { select: { first_name: true, last_name_pat: true } },
+      assigned_esp: { select: { access_code: true, first_name: true } },
+      evidences: true,
+      logs: {
+        orderBy: { created_at: 'asc' },
+        include: { user: { select: { role: true, access_code: true, first_name: true } } }
+      },
+      tech_report: true,
+      client_survey: true
+    }
+  })
+
+  if (!ticket) throw new Error('Ticket no encontrado')
+
+  if (role === 'CLI_' && ticket.created_by_id !== userId) {
+    throw new Error('No tienes permiso para ver este ticket')
+  }
+
+  return ticket
+}
+
+module.exports = { createTicket, getClientTickets, getTicketDetail }
