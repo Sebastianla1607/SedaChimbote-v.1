@@ -22,7 +22,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/triage", triageRoutes);
 
 app.get("/", (req, res) => {
-  res.json({ mensaje: "Servidor SEDACHIMBOTE funcionando ✅" });
+  res.json({ mensaje: "TODO  FUNCIONANDO :) ATTE: LEAR" });
 });
 
 module.exports = app;
