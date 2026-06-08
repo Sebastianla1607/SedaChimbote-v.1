@@ -14,7 +14,9 @@ const ticketRoutes = require("./routes/ticket.routes");
 const triageRoutes = require("./routes/triage.routes");
 const userRoutes = require("./routes/user.routes");
 const adminRoutes = require('./routes/admin.routes')
+const techRoutes = require('./routes/tech.routes')
 
+app.use('/api/tech', techRoutes)
 app.use('/api/admin', adminRoutes)
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
