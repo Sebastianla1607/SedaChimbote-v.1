@@ -1,10 +1,13 @@
 const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('Sembrando datos...')
 
+  // Especialidades
   await prisma.specialty.createMany({
+    skipDuplicates: true,
     data: [
       { name: 'Fugas', description: 'Fuga de agua en red interna o externa' },
       { name: 'Medidores', description: 'Daño, robo o cambio de medidor' },
@@ -13,7 +16,9 @@ async function main() {
     ]
   })
 
+  // Customers
   await prisma.customer.createMany({
+    skipDuplicates: true,
     data: [
       {
         supply_code: 'SUM-001',
@@ -88,7 +93,24 @@ async function main() {
     ]
   })
 
+  // Jefe inicial
+  const password_hash = await bcrypt.hash('Jefe2024!', 10)
+  await prisma.user.upsert({
+    where: { access_code: 'JEF001' },
+    update: {},
+    create: {
+      role: 'JEF_',
+      access_code: 'JEF001',
+      password_hash,
+      first_name: 'Roberto',
+      last_name_pat: 'Sánchez',
+      last_name_mat: 'Torres',
+      phone: '999888777'
+    }
+  })
+
   console.log('✅ Datos sembrados correctamente')
+  console.log('👤 Jefe: JEF001 / Jefe2024!')
 }
 
 main()
