@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  CLI_
+  ESP_
+  ADM_
+  JEF_
+}
+
+enum Priority {
+  BAJA
+  MEDIA
+  ALTA
+  EXTREMA
+}
+
+enum TicketStatus {
+  PENDIENTE
+  ASIGNADO
+  EN_CAMINO
+  EJECUCION_ACTIVA
+  PRE_CERRADO
+  OBSERVADO
+  CERRADO
+}
+
+enum TicketOrigin {
+  CIUDADANO
+  INTERNO
+}
+
+enum EvidenceType {
+  REPORTE_INICIAL
+  RESOLUCION_FINAL
+  AUSENCIA
+}
+
+enum LogAction {
+  CREADO
+  ASIGNADO
+  REASIGNADO
+  EN_CAMINO
+  TECNICO_AFUERA
+  CLIENTE_EN_CASA
+  CLIENTE_AUSENTE
+  EJECUCION_ACTIVA
+  PRE_CERRADO
+  RECHAZADO
+  CERRADO
+  PRIORIDAD_CAMBIADA
+}
+
+// ==================== MODELOS ====================
+
+model Customer {
+  id                Int      @id @default(autoincrement())
+  supply_code       String   @unique
+  reference_amount  Decimal  @db.Decimal(10,2)
+  doc_type          String   @default("DNI")
+  doc_number        String
+  first_name        String
+  last_name_pat     String
+  last_name_mat     String
+  address           String
+  latitude          Decimal? @db.Decimal(10,8)
+  longitude         Decimal? @db.Decimal(11,8)
+  phone             String?
+  email             String?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+
+  user              User?
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  role            Role
+  email           String?  @unique
+  access_code     String?  @unique
+  password_hash   String
+  first_name      String
+  last_name_pat   String
+  last_name_mat   String
+  phone           String?
+  is_wip_locked   Boolean  @default(false)
+  is_active       Boolean  @default(true)
+  last_login      DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  customer_id     Int?     @unique
+  customer        Customer? @relation(fields: [customer_id], references: [id])
+
+  specialties       UserSpecialty[]
+  tickets_created   Ticket[]        @relation("CreatedBy")
+  tickets_assigned  Ticket[]        @relation("AssignedEsp")
+  tickets_closed    Ticket[]        @relation("ClosedBy")
+  evidences         Evidence[]
+  logs              TicketLog[]
+  notifications     Notification[]
+  tech_reports      TechReport[]
+}
+
+model Specialty {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+
+  users       UserSpecialty[]
+  tickets     Ticket[]
+}
+
+model UserSpecialty {
+  user_id      Int
+  specialty_id Int
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  specialty    Specialty @relation(fields: [specialty_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, specialty_id])
+}
+
+model Ticket {
+  id                     Int          @id @default(autoincrement())
+  code                   String       @unique
+  origin                 TicketOrigin
+  description            String
+  reference_point        String?
+  address                String?
+  latitude               Decimal?     @db.Decimal(10,8)
+  longitude              Decimal?     @db.Decimal(11,8)
+  status                 TicketStatus @default(PENDIENTE)
+  priority               Priority     @default(MEDIA)
+  due_date               DateTime
+  closed_at              DateTime?
+  is_client_conformed    Boolean      @default(false)
+
+  ai_category            String?
+  ai_priority            Priority?
+  ai_specialty           String?
+  ai_report              String?
+  ai_difficulty          String?
+
+  created_at             DateTime     @default(now())
+  updated_at             DateTime     @updatedAt
+
+  created_by_id          Int
+  created_by             User         @relation("CreatedBy", fields: [created_by_id], references: [id])
+
+  assigned_esp_id        Int?
+  assigned_esp           User?        @relation("AssignedEsp", fields: [assigned_esp_id], references: [id])
+
+  closed_by_id           Int?
+  closed_by              User?        @relation("ClosedBy", fields: [closed_by_id], references: [id])
+
+  specialty_id           Int?
+  specialty              Specialty?   @relation(fields: [specialty_id], references: [id])
+
+  evidences              Evidence[]
+  logs                   TicketLog[]
+  notifications          Notification[]
+  tech_report            TechReport?
+  client_survey          ClientSurvey?
+}
+
+model Evidence {
+  id             Int          @id @default(autoincrement())
+  image_url      String
+  type           EvidenceType
+  uploaded_at    DateTime     @default(now())
+
+  ticket_id      Int
+  ticket         Ticket       @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  uploaded_by_id Int
+  uploaded_by    User         @relation(fields: [uploaded_by_id], references: [id])
+}
+
+model TicketLog {
+  id          Int       @id @default(autoincrement())
+  action      LogAction
+  from_status String?
+  to_status   String?
+  note        String?
+  created_at  DateTime  @default(now())
+
+  ticket_id   Int
+  ticket      Ticket    @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  user_id     Int
+  user        User      @relation(fields: [user_id], references: [id])
+}
+
+model TechReport {
+  id          Int      @id @default(autoincrement())
+  description String
+  created_at  DateTime @default(now())
+
+  ticket_id   Int      @unique
+  ticket      Ticket   @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  tech_id     Int
+  tech        User     @relation(fields: [tech_id], references: [id])
+
+  evidences_urls String[]
+}
+
+model ClientSurvey {
+  id          Int      @id @default(autoincrement())
+  nps_score   Int
+  comment     String?
+  answered_at DateTime @default(now())
+
+  ticket_id   Int      @unique
+  ticket      Ticket   @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  ticket_id  Int?
+  ticket     Ticket?  @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+}
