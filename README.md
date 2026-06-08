@@ -1,21 +1,20 @@
 # SedaChimbote-v.1
-Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo de vida de Tickets de reclamos de una empresa que ofrece servicios.
+  - Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo de vida de Tickets de reclamos de una empresa que ofrece servicios.
 ---
 
-# 📘 Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE
+# Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE
 
 **Versión:** 1.0  
 **Última actualización:** Mayo 2026  
-**Autor:** Ledesma Arana CLaudio
-
+**Autor:** Ledesma Arana Claudi  
 ---
 
-## 📋 Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [SedaChimbote-v.1](#sedachimbote-v1)
-  - [Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo de vida de Tickets de reclamos de una empresa que ofrece servicios.](#una-appweb-que-intenta-mejorar-optimizar-y-gestionar-de-mejor-manera-el-ciclo-de-vida-de-tickets-de-reclamos-de-una-empresa-que-ofrece-servicios)
-- [📘 Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE](#-manual-de-despliegue--sistema-de-gestión-de-reclamos-sedachimbote)
-  - [📋 Tabla de Contenidos](#-tabla-de-contenidos)
+- [Manual de Despliegue – Sistema de Gestión de Reclamos SEDACHIMBOTE](#manual-de-despliegue--sistema-de-gestión-de-reclamos-sedachimbote)
+  - [**Autor:** Ledesma Arana Claudi](#autor-ledesma-arana-claudi)
+  - [Tabla de Contenidos](#tabla-de-contenidos)
   - [1. Requisitos previos](#1-requisitos-previos)
   - [2. Estructura del proyecto](#2-estructura-del-proyecto)
   - [3. Configuración del entorno de desarrollo](#3-configuración-del-entorno-de-desarrollo)
@@ -53,7 +52,7 @@ Una AppWeb que intenta mejorar, optimizar y gestionar de mejor manera el ciclo d
   - [11. Referencias y comandos útiles](#11-referencias-y-comandos-útiles)
     - [Comandos para mantener el sistema en producción](#comandos-para-mantener-el-sistema-en-producción)
     - [Enlaces útiles](#enlaces-útiles)
-  - [¡Fin del manual!](#fin-del-manual)
+  - [✅ ¡Fin del manual!](#-fin-del-manual)
 
 ---
 
@@ -603,7 +602,7 @@ VITE_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 
 ---
 
-## ¡Fin del manual!
+## ✅ ¡Fin del manual!
 
 Este documento está diseñado para que **cualquier desarrollador o administrador de sistemas** pueda poner en marcha el sistema completo desde cero, incluso en un entorno de producción real. Si sigues estos pasos al pie de la letra, tendrás una plataforma robusta, escalable y segura para gestionar reclamos con inteligencia artificial en SEDACHIMBOTE.
 
