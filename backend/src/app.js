@@ -19,7 +19,7 @@ const techRoutes = require('./routes/tech.routes')
 app.use('/api/tech', techRoutes)
 app.use('/api/admin', adminRoutes)
 app.use("/api/users", userRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);8
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/triage", triageRoutes);
 
