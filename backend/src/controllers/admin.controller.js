@@ -1,3 +1,4 @@
+const prisma = require('../utils/prisma')
 const { getAllTickets, createInternalTicket, assignTicket, approveClose, rejectClose } = require('../services/admin.service')
 
 const listTickets = async (req, res) => {
@@ -47,4 +48,33 @@ const reject = async (req, res) => {
   }
 }
 
-module.exports = { listTickets, createInternal, assign, approve, reject }
+const getHistory = async (req, res) => {
+  try {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        created_by: { select: { first_name: true, last_name_pat: true, role: true, access_code: true } },
+        assigned_esp: { select: { access_code: true, first_name: true } },
+        closed_by: { select: { access_code: true, first_name: true } },
+        specialty: true,
+        evidences: true,
+        tech_report: true,
+        client_survey: true,
+        logs: {
+          orderBy: { created_at: 'asc' },
+          include: {
+            user: { select: { role: true, access_code: true, first_name: true } }
+          }
+        }
+      }
+    })
+
+    if (!ticket) return res.status(404).json({ error: 'Ticket no encontrado' })
+
+    res.json({ ticket })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+module.exports = { listTickets, createInternal, assign, approve, reject, getHistory }
