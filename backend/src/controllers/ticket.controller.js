@@ -110,4 +110,47 @@ const respondPresence = async (req, res) => {
   }
 }
 
-module.exports = { create, getMyTickets, getDetail, submitSurvey, respondPresence }
+const submitConformity = async (req, res) => {
+  try {
+    const { comment } = req.body
+    const ticketId = parseInt(req.params.id)
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+    if (!ticket) return res.status(404).json({ error: 'Ticket no encontrado' })
+    if (ticket.created_by_id !== req.user.id) return res.status(403).json({ error: 'No tienes permiso' })
+    if (ticket.status !== 'EJECUCION_ACTIVA') return res.status(400).json({ error: 'El ticket no está en ejecución activa' })
+    if (ticket.is_client_conformed) return res.status(400).json({ error: 'Ya diste tu conformidad' })
+
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { is_client_conformed: true }
+    })
+
+    await prisma.ticketLog.create({
+      data: {
+        ticket_id: ticketId,
+        user_id: req.user.id,
+        action: 'CLIENTE_EN_CASA',
+        from_status: 'EJECUCION_ACTIVA',
+        to_status: 'EJECUCION_ACTIVA',
+        note: comment || 'Cliente dio conformidad al trabajo realizado'
+      }
+    })
+
+    // Notificar al técnico
+    await prisma.notification.create({
+      data: {
+        user_id: ticket.assigned_esp_id,
+        ticket_id: ticketId,
+        message: `El cliente dio su conformidad al trabajo. Puedes enviar tu reporte final.`
+      }
+    })
+
+    res.json({ message: 'Conformidad registrada, gracias' })
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+module.exports = { create, getMyTickets, getDetail, submitSurvey, respondPresence, submitConformity }
