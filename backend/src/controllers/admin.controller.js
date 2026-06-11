@@ -77,4 +77,43 @@ const getHistory = async (req, res) => {
   }
 }
 
-module.exports = { listTickets, createInternal, assign, approve, reject, getHistory }
+const getClients = async (req, res) => {
+  try {
+    const clients = await prisma.user.findMany({
+      where: { role: 'CLI_' },
+      select: {
+        id: true,
+        first_name: true,
+        last_name_pat: true,
+        last_name_mat: true,
+        email: true,
+        phone: true,
+        is_active: true,
+        created_at: true,
+        customer: {
+          select: {
+            supply_code: true,
+            address: true,
+            doc_number: true
+          }
+        },
+        tickets_created: {
+          select: {
+            id: true,
+            code: true,
+            status: true,
+            priority: true,
+            created_at: true
+          },
+          orderBy: { created_at: 'desc' }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    })
+    res.json({ clients })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+module.exports = { listTickets, createInternal, assign, approve, reject, getHistory, getClients }
