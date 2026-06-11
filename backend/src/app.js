@@ -19,6 +19,7 @@ const userRoutes = require('./routes/user.routes')
 const adminRoutes = require('./routes/admin.routes')
 const techRoutes = require('./routes/tech.routes')
 const notificationRoutes = require('./routes/notification.routes')
+const specialtyRoutes = require('./routes/specialty.routes')
 
 app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/tickets', ticketRoutes)
@@ -27,9 +28,13 @@ app.use('/api/users', userRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/tech', techRoutes)
 app.use('/api/notifications', notificationRoutes)
+app.use('/api/specialties', specialtyRoutes)
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'Servidor SEDACHIMBOTE funcionando ✅' })
 })
+
+const errorHandler = require('./middlewares/error.middleware')
+app.use(errorHandler)
 
 module.exports = app
