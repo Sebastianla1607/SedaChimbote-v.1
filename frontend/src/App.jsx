@@ -7,6 +7,9 @@ import NewTicket from './pages/client/NewTicket'
 import TechDashboard from './pages/tech/Dashboard'
 import TicketDetail from './pages/tech/TicketDetail'
 import AdminDashboard from './pages/admin/Dashboard'
+import AdminNewTicket from './pages/admin/NewTicket'
+import NewTech from './pages/admin/NewTech'
+
 
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth()
@@ -39,6 +42,8 @@ function App() {
       <Route path="*" element={<HomeRedirect />} />
       <Route path="/tech/ticket/:id" element={<PrivateRoute roles={['ESP_']}><TicketDetail /></PrivateRoute>} />
       <Route path="/admin/dashboard" element={<PrivateRoute roles={['ADM_', 'JEF_']}><AdminDashboard /></PrivateRoute>} />
+      <Route path="/admin/new-ticket" element={<PrivateRoute roles={['ADM_', 'JEF_']}><AdminNewTicket /></PrivateRoute>} />
+      <Route path="/admin/new-tech" element={<PrivateRoute roles={['ADM_', 'JEF_']}><NewTech /></PrivateRoute>} />
     </Routes>
   )
 }
