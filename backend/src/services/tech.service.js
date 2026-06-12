@@ -1,6 +1,5 @@
 const prisma = require('../utils/prisma')
 
-// Ver tickets asignados al técnico
 const getTechTickets = async (techId) => {
   const tickets = await prisma.ticket.findMany({
     where: {
@@ -28,7 +27,7 @@ const getTechTickets = async (techId) => {
   return { active: tickets, waiting_close: waitingClose }
 }
 
-// Aceptar ticket e iniciar ruta
+// Técnico acepta ticket — notifica al cliente ¿estás en casa?
 const startRoute = async (techId, ticketId) => {
   const tech = await prisma.user.findUnique({ where: { id: techId } })
   if (tech.is_wip_locked) throw new Error('Ya tienes un ticket activo en curso')
@@ -37,11 +36,6 @@ const startRoute = async (techId, ticketId) => {
   if (!ticket) throw new Error('Ticket no encontrado')
   if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
   if (ticket.status !== 'ASIGNADO') throw new Error('El ticket no está en estado ASIGNADO')
-
-  const updated = await prisma.ticket.update({
-    where: { id: ticketId },
-    data: { status: 'EN_CAMINO' }
-  })
 
   // Bloquear WIP del técnico
   await prisma.user.update({
@@ -53,10 +47,10 @@ const startRoute = async (techId, ticketId) => {
     data: {
       ticket_id: ticketId,
       user_id: techId,
-      action: 'EN_CAMINO',
+      action: 'ASIGNADO',
       from_status: 'ASIGNADO',
-      to_status: 'EN_CAMINO',
-      note: 'Técnico en camino a la vivienda'
+      to_status: 'ASIGNADO',
+      note: 'Técnico aceptó el ticket, esperando confirmación del cliente'
     }
   })
 
@@ -65,7 +59,42 @@ const startRoute = async (techId, ticketId) => {
     data: {
       user_id: ticket.created_by_id,
       ticket_id: ticketId,
-      message: `El técnico ${tech.access_code} está en camino a tu vivienda para atender tu reclamo ${ticket.code}`
+      message: `El técnico ${tech.access_code} ha aceptado tu reclamo ${ticket.code}. ¿Estás en casa?`
+    }
+  })
+
+  return { message: 'Ticket aceptado, cliente notificado' }
+}
+
+// Técnico confirma que el cliente está en casa y sale hacia la vivienda
+const goToLocation = async (techId, ticketId) => {
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  if (!ticket) throw new Error('Ticket no encontrado')
+  if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
+  if (ticket.status !== 'ASIGNADO') throw new Error('El cliente aún no ha confirmado que está en casa')
+
+  const updated = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { status: 'EN_CAMINO' }
+  })
+
+  await prisma.ticketLog.create({
+    data: {
+      ticket_id: ticketId,
+      user_id: techId,
+      action: 'EN_CAMINO',
+      from_status: 'ASIGNADO',
+      to_status: 'EN_CAMINO',
+      note: 'Cliente confirmó presencia, técnico en camino a la vivienda'
+    }
+  })
+
+  // Notificar al cliente
+  await prisma.notification.create({
+    data: {
+      user_id: ticket.created_by_id,
+      ticket_id: ticketId,
+      message: `El técnico está en camino a tu vivienda para atender tu reclamo ${ticket.code}`
     }
   })
 
@@ -99,7 +128,7 @@ const arrivedAtLocation = async (techId, ticketId) => {
     }
   })
 
-  return { message: 'Cliente notificado, esperando respuesta' }
+  return { message: 'Cliente notificado, esperando que abra la puerta' }
 }
 
 // Cliente ausente
@@ -115,7 +144,6 @@ const clientAbsent = async (techId, ticketId, data) => {
     data: { status: 'OBSERVADO' }
   })
 
-  // Subir evidencia de ausencia
   if (image_url) {
     await prisma.evidence.create({
       data: {
@@ -152,6 +180,7 @@ const startExecution = async (techId, ticketId) => {
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
   if (!ticket) throw new Error('Ticket no encontrado')
   if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
+  if (ticket.status !== 'EN_CAMINO') throw new Error('El ticket no está en estado EN_CAMINO')
 
   const updated = await prisma.ticket.update({
     where: { id: ticketId },
@@ -165,7 +194,7 @@ const startExecution = async (techId, ticketId) => {
       action: 'EJECUCION_ACTIVA',
       from_status: 'EN_CAMINO',
       to_status: 'EJECUCION_ACTIVA',
-      note: 'Cliente en casa, técnico inició ejecución'
+      note: 'Cliente abrió la puerta, técnico inició ejecución'
     }
   })
 
@@ -184,7 +213,6 @@ const submitTechReport = async (techId, ticketId, data) => {
   if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
   if (ticket.status !== 'EJECUCION_ACTIVA') throw new Error('El ticket no está en ejecución activa')
 
-  // Guardar reporte técnico
   await prisma.techReport.create({
     data: {
       ticket_id: ticketId,
@@ -194,7 +222,6 @@ const submitTechReport = async (techId, ticketId, data) => {
     }
   })
 
-  // Subir evidencias
   await prisma.evidence.createMany({
     data: image_urls.map(url => ({
       ticket_id: ticketId,
@@ -204,13 +231,11 @@ const submitTechReport = async (techId, ticketId, data) => {
     }))
   })
 
-  // Cambiar estado a PRE_CERRADO
   await prisma.ticket.update({
     where: { id: ticketId },
     data: { status: 'PRE_CERRADO' }
   })
 
-  // Liberar WIP
   await prisma.user.update({
     where: { id: techId },
     data: { is_wip_locked: false }
@@ -227,7 +252,6 @@ const submitTechReport = async (techId, ticketId, data) => {
     }
   })
 
-  // Notificar al administrador
   const admins = await prisma.user.findMany({ where: { role: 'ADM_', is_active: true } })
   await prisma.notification.createMany({
     data: admins.map(admin => ({
@@ -240,4 +264,4 @@ const submitTechReport = async (techId, ticketId, data) => {
   return { message: 'Reporte enviado, ticket en espera de aprobación' }
 }
 
-module.exports = { getTechTickets, startRoute, arrivedAtLocation, clientAbsent, startExecution, submitTechReport }
+module.exports = { getTechTickets, startRoute, goToLocation, arrivedAtLocation, clientAbsent, startExecution, submitTechReport }
