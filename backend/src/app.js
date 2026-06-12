@@ -1,40 +1,33 @@
-const express = require('express')
-const cors = require('cors')
-const dotenv = require('dotenv')
-const { generalLimiter, authLimiter, helmet } = require('./middlewares/security.middleware')
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
+import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import ClientDashboard from './pages/client/Dashboard'
 
-dotenv.config()
+const PrivateRoute = ({ children, roles }) => {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center h-screen">Cargando...</div>
+  if (!user) return <Navigate to="/login" />
+  if (roles && !roles.includes(user.role)) return <Navigate to="/login" />
+  return children
+}
 
-const app = express()
+function App() {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center h-screen">Cargando...</div>
 
-app.use(helmet())
-app.use(cors())
-app.use(express.json({ limit: '10mb' }))
-app.use('/api', generalLimiter)
+  return (
+    <Routes>
+      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+      <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+      <Route path="/dashboard" element={
+        <PrivateRoute roles={['CLI_']}>
+          <ClientDashboard />
+        </PrivateRoute>
+      } />
+      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+    </Routes>
+  )
+}
 
-const authRoutes = require('./routes/auth.routes')
-const ticketRoutes = require('./routes/ticket.routes')
-const triageRoutes = require('./routes/triage.routes')
-const userRoutes = require('./routes/user.routes')
-const adminRoutes = require('./routes/admin.routes')
-const techRoutes = require('./routes/tech.routes')
-const notificationRoutes = require('./routes/notification.routes')
-const specialtyRoutes = require('./routes/specialty.routes')
-
-app.use('/api/auth', authLimiter, authRoutes)
-app.use('/api/tickets', ticketRoutes)
-app.use('/api/triage', triageRoutes)
-app.use('/api/users', userRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/tech', techRoutes)
-app.use('/api/notifications', notificationRoutes)
-app.use('/api/specialties', specialtyRoutes)
-
-app.get('/', (req, res) => {
-  res.json({ mensaje: 'Servidor SEDACHIMBOTE funcionando ✅' })
-})
-
-const errorHandler = require('./middlewares/error.middleware')
-app.use(errorHandler)
-
-module.exports = app
+export default App
