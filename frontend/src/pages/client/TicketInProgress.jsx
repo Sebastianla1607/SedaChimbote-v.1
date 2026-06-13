@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
-import { ArrowLeft, MapPin, Clock, CheckCircle, AlertTriangle, Star, Loader } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, AlertTriangle, Loader } from 'lucide-react'
 
 const steps = [
   { key: 'ASIGNADO', label: 'Asignado', desc: 'Técnico asignado por el sistema' },
   { key: 'EN_CAMINO', label: 'En Camino', desc: 'Unidad móvil en tránsito' },
-  { key: 'EJECUCION_ACTIVA', label: 'En la Puerta', desc: 'Esperando acceso al predio' },
+  { key: 'EJECUCION_ACTIVA', label: 'En la Puerta', desc: 'Técnico en tu vivienda' },
   { key: 'PRE_CERRADO', label: 'En Reparación', desc: 'Trabajo en proceso' },
   { key: 'CERRADO', label: 'Cerrado', desc: 'Servicio completado' },
 ]
@@ -23,10 +23,11 @@ export default function TicketInProgress() {
   const [npsScore, setNpsScore] = useState(0)
   const [npsComment, setNpsComment] = useState('')
   const [surveyDone, setSurveyDone] = useState(false)
+  const [presenceResponded, setPresenceResponded] = useState(false)
 
   useEffect(() => {
     fetchTicket()
-    const interval = setInterval(fetchTicket, 15000)
+    const interval = setInterval(fetchTicket, 10000)
     return () => clearInterval(interval)
   }, [id])
 
@@ -35,6 +36,11 @@ export default function TicketInProgress() {
       const { data } = await api.get(`/tickets/${id}`)
       setTicket(data.ticket)
       if (data.ticket.client_survey) setSurveyDone(true)
+      // Verificar si ya respondió presencia
+      const presenceLog = data.ticket.logs?.find(l =>
+        l.action === 'CLIENTE_EN_CASA' || l.action === 'CLIENTE_AUSENTE'
+      )
+      if (presenceLog) setPresenceResponded(true)
     } catch (err) {
       console.error(err)
     } finally {
@@ -46,6 +52,7 @@ export default function TicketInProgress() {
     setActionLoading(true)
     try {
       await api.post(`/tickets/${id}/presence`, { is_home: isHome })
+      setPresenceResponded(true)
       await fetchTicket()
     } catch (err) {
       console.error(err)
@@ -97,6 +104,9 @@ export default function TicketInProgress() {
 
   const currentStep = getCurrentStep()
 
+  // Ver si técnico ya llegó (log TECNICO_AFUERA)
+  const techArrived = ticket.logs?.some(l => l.action === 'TECNICO_AFUERA')
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
 
@@ -110,13 +120,13 @@ export default function TicketInProgress() {
           <p className="text-blue-300 text-xs font-mono">{ticket.code}</p>
         </div>
         {ticket.priority === 'EXTREMA' && (
-          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">ALTA PRIORIDAD</span>
+          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">URGENTE</span>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-8 space-y-4">
 
-        {/* SLA restante */}
+        {/* SLA */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
             <Clock className="w-5 h-5 text-[#1a237e]" />
@@ -129,14 +139,16 @@ export default function TicketInProgress() {
           </div>
         </div>
 
-        {/* Alerta técnico afuera */}
-        {ticket.status === 'EN_CAMINO' && (
+        {/* PASO 1 — Técnico aceptó, ¿estás en casa? */}
+        {ticket.status === 'ASIGNADO' && !presenceResponded && (
           <div className="bg-[#1a237e] rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-5 h-5 text-blue-300" />
-              <p className="text-white font-semibold text-sm">El especialista se encuentra fuera de tu domicilio</p>
+              <div className="w-8 h-8 bg-blue-800 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">👷</span>
+              </div>
+              <p className="text-white font-semibold text-sm">El técnico ha aceptado tu reclamo</p>
             </div>
-            <p className="text-blue-300 text-xs mb-4">Por favor, facilite el acceso para que pueda iniciar la inspección de la fuga reportada en la red secundaria.</p>
+            <p className="text-blue-300 text-xs mb-4">Para coordinar la visita, indícanos si estás en casa.</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => handlePresence(true)}
@@ -156,16 +168,51 @@ export default function TicketInProgress() {
           </div>
         )}
 
-        {/* Conformidad */}
+        {/* Cliente respondió que está en casa */}
+        {ticket.status === 'ASIGNADO' && presenceResponded && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <div>
+              <p className="text-green-700 font-semibold text-sm">¡Perfecto! El técnico se dirigirá a tu vivienda</p>
+              <p className="text-green-600 text-xs mt-0.5">Espera al técnico en tu domicilio</p>
+            </div>
+          </div>
+        )}
+
+        {/* Técnico en camino */}
+        {ticket.status === 'EN_CAMINO' && !techArrived && (
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-xl">
+              🚗
+            </div>
+            <div>
+              <p className="text-indigo-700 font-semibold text-sm">El técnico está en camino</p>
+              <p className="text-indigo-600 text-xs mt-0.5">Por favor permanece en casa</p>
+            </div>
+          </div>
+        )}
+
+        {/* Técnico llegó */}
+        {ticket.status === 'EN_CAMINO' && techArrived && (
+          <div className="bg-[#1a237e] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🚪</span>
+              <p className="text-white font-semibold text-sm">El especialista está afuera de tu domicilio</p>
+            </div>
+            <p className="text-blue-300 text-xs">Por favor, facilite el acceso para que pueda iniciar la inspección.</p>
+          </div>
+        )}
+
+        {/* Ejecución activa — dar conformidad */}
         {ticket.status === 'EJECUCION_ACTIVA' && !ticket.is_client_conformed && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <p className="text-green-700 font-semibold text-sm mb-2">El técnico está trabajando en tu problema</p>
-            <p className="text-green-600 text-xs mb-3">Cuando el técnico termine, deberás confirmar la conformidad del trabajo realizado.</p>
+            <p className="text-green-700 font-semibold text-sm mb-1">El técnico está trabajando en tu problema</p>
+            <p className="text-green-600 text-xs mb-3">Cuando termine, confirma que el trabajo quedó correcto.</p>
             <button
               onClick={() => setShowConformity(true)}
               className="w-full bg-green-600 text-white font-semibold py-2.5 rounded-lg text-sm"
             >
-              Dar conformidad al trabajo
+              Dar conformidad al trabajo ✅
             </button>
           </div>
         )}
@@ -177,15 +224,27 @@ export default function TicketInProgress() {
           </div>
         )}
 
-        {/* Ticket cerrado — encuesta */}
+        {/* Pre-cerrado */}
+        {ticket.status === 'PRE_CERRADO' && (
+          <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-teal-600" />
+            <div>
+              <p className="text-teal-700 font-semibold text-sm">Trabajo completado</p>
+              <p className="text-teal-600 text-xs mt-0.5">El administrador revisará y cerrará el ticket</p>
+            </div>
+          </div>
+        )}
+
+        {/* Cerrado — encuesta */}
         {ticket.status === 'CERRADO' && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
             <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <CheckCircle className="w-7 h-7 text-green-600" />
             </div>
             <h3 className="font-bold text-gray-800 mb-1">¡Reclamo Cerrado!</h3>
-            <p className="text-gray-500 text-sm mb-4">Tu reclamo <span className="font-mono font-bold text-[#1a237e]">{ticket.code}</span> ha sido cerrado formalmente por el administrador.</p>
-
+            <p className="text-gray-500 text-sm mb-4">
+              Tu reclamo <span className="font-mono font-bold text-[#1a237e]">{ticket.code}</span> fue cerrado exitosamente.
+            </p>
             {!surveyDone ? (
               <button
                 onClick={() => setShowSurvey(true)}
@@ -273,7 +332,6 @@ export default function TicketInProgress() {
           <div className="bg-white rounded-t-2xl w-full p-6">
             <h3 className="font-bold text-gray-800 mb-1">Calificación Final</h3>
             <p className="text-gray-500 text-sm mb-4">¿Qué tan satisfecho estás con la resolución de tu caso?</p>
-
             <div className="flex justify-center gap-3 mb-2">
               {[1,2,3,4,5].map(star => (
                 <button
@@ -289,7 +347,6 @@ export default function TicketInProgress() {
               <span>1 - Muy insatisfecho</span>
               <span>5 - Muy satisfecho</span>
             </div>
-
             <textarea
               value={npsComment}
               onChange={(e) => setNpsComment(e.target.value)}
@@ -297,7 +354,6 @@ export default function TicketInProgress() {
               rows={2}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a237e] resize-none mb-4"
             />
-
             <button
               onClick={handleSurvey}
               disabled={actionLoading || npsScore === 0}

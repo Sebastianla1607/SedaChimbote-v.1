@@ -14,7 +14,6 @@ import {
   CheckCircle,
   Loader,
   XCircle,
-  Eye,
 } from "lucide-react";
 
 const priorityConfig = {
@@ -339,23 +338,24 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      {/* Botón flotante */}
-      {tab === "activos" && activeTickets.length === 0 && (
+      {/* Botón flotante unificado (cambio aplicado) */}
+      {tab === "activos" && (
         <button
-          onClick={() => navigate("/client/new-ticket")}
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-[#1a237e] hover:bg-[#283593] text-white font-semibold px-6 py-3 rounded-full shadow-lg flex items-center gap-2 transition"
+          onClick={() => {
+            if (activeTickets.length > 0) return;
+            navigate("/client/new-ticket");
+          }}
+          disabled={activeTickets.length > 0}
+          className={`fixed bottom-20 left-1/2 -translate-x-1/2 text-white font-semibold px-6 py-3 rounded-full shadow-lg flex items-center gap-2 transition ${
+            activeTickets.length > 0
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#1a237e] hover:bg-[#283593]"
+          }`}
         >
           <Plus className="w-5 h-5" />
-          Reportar Nuevo Reclamo
-        </button>
-      )}
-      {tab === "activos" && activeTickets.length > 0 && (
-        <button
-          onClick={() => navigate("/client/new-ticket")}
-          className="fixed bottom-20 right-4 bg-[#1a237e] hover:bg-[#283593] text-white font-semibold px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition"
-        >
-          <Plus className="w-5 h-5" />
-          Nuevo Reclamo
+          {activeTickets.length > 0
+            ? "Ya tienes un reclamo activo"
+            : "Reportar Nuevo Reclamo"}
         </button>
       )}
 
@@ -424,7 +424,7 @@ export default function ClientDashboard() {
                   </p>
                   <p className="text-sm text-gray-700">
                     {new Date(selectedTicket.created_at).toLocaleDateString(
-                      "es-PE",
+                      "es-PE"
                     )}
                   </p>
                 </div>
@@ -434,7 +434,7 @@ export default function ClientDashboard() {
                   </p>
                   <p className="text-sm text-gray-700">
                     {new Date(selectedTicket.due_date).toLocaleDateString(
-                      "es-PE",
+                      "es-PE"
                     )}
                   </p>
                 </div>
