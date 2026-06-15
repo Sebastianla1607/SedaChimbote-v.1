@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
 import { ArrowLeft, MapPin, Clock, AlertTriangle, CheckCircle, Camera, X, Loader } from 'lucide-react'
+import TechMap from '../../components/TechMap'
 
 const priorityConfig = {
   BAJA: { label: 'Prioridad Baja', color: 'bg-green-100 text-green-700' },
@@ -79,13 +80,11 @@ export default function TicketDetail() {
     </div>
   )
 
-  // Determinar si el técnico tiene un trabajo en progreso (WIP)
   const isWip = ticket.status === 'EN_CAMINO' || ticket.status === 'EJECUCION_ACTIVA'
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
 
-      {/* Header con botón de volver bloqueado en WIP */}
       <div className="bg-[#1a237e] px-4 pt-10 pb-4 flex items-center gap-3">
         <button
           onClick={() => {
@@ -159,19 +158,26 @@ export default function TicketDetail() {
           </div>
         )}
 
-        {/* Ubicación */}
+        {/* Ubicación con mapa */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ubicación</p>
           <p className="text-sm text-gray-700 mb-3 flex items-center gap-1">
             <MapPin className="w-4 h-4 text-[#1a237e]" />
             {ticket.address}
           </p>
+
+          <TechMap
+            clientLat={ticket.latitude}
+            clientLng={ticket.longitude}
+            clientAddress={ticket.address}
+          />
+
           <button
             onClick={openMaps}
-            className="w-full bg-[#1a237e] text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2"
+            className="w-full bg-[#1a237e] text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 mt-3"
           >
             <MapPin className="w-4 h-4" />
-            Abrir en Google Maps
+            Abrir navegación en Google Maps
           </button>
         </div>
 
@@ -186,7 +192,7 @@ export default function TicketDetail() {
           </p>
         </div>
 
-        {/* Estado esperando cliente — después de aceptar */}
+        {/* Estado esperando cliente */}
         {ticket.status === 'ASIGNADO' && ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando')) && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -298,10 +304,8 @@ export default function TicketDetail() {
 
       </div>
 
-      {/* Botones según estado */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-4 space-y-2">
 
-        {/* Estado ASIGNADO — antes de aceptar */}
         {ticket.status === 'ASIGNADO' && !ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando')) && (
           <button
             onClick={() => handleAction('start')}
@@ -313,7 +317,6 @@ export default function TicketDetail() {
           </button>
         )}
 
-        {/* Estado ASIGNADO — después de aceptar, esperando cliente */}
         {ticket.status === 'ASIGNADO' && ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando')) && (
           <button
             onClick={() => handleAction('go')}
@@ -325,7 +328,6 @@ export default function TicketDetail() {
           </button>
         )}
 
-        {/* Estado EN_CAMINO */}
         {ticket.status === 'EN_CAMINO' && (
           <>
             <button
@@ -345,7 +347,6 @@ export default function TicketDetail() {
           </>
         )}
 
-        {/* Estado EN_CAMINO — después de llegar, esperando que abra */}
         {ticket.status === 'EN_CAMINO' && ticket.logs?.some(l => l.action === 'TECNICO_AFUERA') && (
           <button
             onClick={() => handleAction('execute')}
@@ -357,7 +358,6 @@ export default function TicketDetail() {
           </button>
         )}
 
-        {/* Estado EJECUCION_ACTIVA */}
         {ticket.status === 'EJECUCION_ACTIVA' && (
           <button
             onClick={() => setShowReportForm(true)}
@@ -368,7 +368,6 @@ export default function TicketDetail() {
           </button>
         )}
 
-        {/* Estado PRE_CERRADO */}
         {ticket.status === 'PRE_CERRADO' && (
           <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 text-center">
             <CheckCircle className="w-8 h-8 text-teal-500 mx-auto mb-2" />
@@ -377,7 +376,6 @@ export default function TicketDetail() {
           </div>
         )}
 
-        {/* Estado OBSERVADO */}
         {ticket.status === 'OBSERVADO' && (
           <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
             <AlertTriangle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
