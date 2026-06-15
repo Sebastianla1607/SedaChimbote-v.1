@@ -117,7 +117,7 @@ const getTicketDetail = async (ticketId, userId, role) => {
       evidences: true,
       logs: {
         orderBy: { created_at: 'asc' },
-        include: { user: { select: { role: true, access_code: true, first_name: true } } }
+        select: { action: true, note: true, created_at: true }
       },
       tech_report: true,
       client_survey: true

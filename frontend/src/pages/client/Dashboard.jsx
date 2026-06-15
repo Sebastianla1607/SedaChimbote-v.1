@@ -424,7 +424,7 @@ export default function ClientDashboard() {
                   </p>
                   <p className="text-sm text-gray-700">
                     {new Date(selectedTicket.created_at).toLocaleDateString(
-                      "es-PE"
+                      "es-PE",
                     )}
                   </p>
                 </div>
@@ -434,7 +434,7 @@ export default function ClientDashboard() {
                   </p>
                   <p className="text-sm text-gray-700">
                     {new Date(selectedTicket.due_date).toLocaleDateString(
-                      "es-PE"
+                      "es-PE",
                     )}
                   </p>
                 </div>
@@ -476,7 +476,7 @@ export default function ClientDashboard() {
             <span className="text-xs">Mapa</span>
           </button>
           <button
-            onClick={logout}
+            onClick={() => navigate("/client/profile")}
             className="flex flex-col items-center gap-1 text-gray-400"
           >
             <User className="w-5 h-5" />
