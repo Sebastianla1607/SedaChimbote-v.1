@@ -1,18 +1,18 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai')
+const Groq = require('groq-sdk')
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+})
 
 const analyzeTicket = async (description, imageBase64 = null) => {
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
   const prompt = `
-Eres el sistema de triaje de SEDACHIMBOTE, empresa de saneamiento de agua potable.
+Eres el sistema de triaje de SEDACHIMBOTE, empresa de saneamiento de agua potable de Chimbote, Perú.
 Tu trabajo es analizar reclamos de ciudadanos y determinar si son averías técnicas del servicio de agua.
 
 INSTRUCCIONES:
-1. Analiza la descripción y/o imagen del reclamo
+1. Analiza la descripción del reclamo
 2. Determina si es una avería técnica válida (fuga, presión baja, medidor dañado, calidad del agua, etc.)
-3. Si NO es una avería técnica (problemas de pago, facturación, consultas generales, pruebas, insultos, etc.) responde con tipo: "RECHAZADO"
+3. Si NO es una avería técnica (problemas de pago, facturación, consultas generales, pruebas, insultos, contenido irrelevante) responde con tipo: "RECHAZADO"
 4. Si necesitas más información para clasificar responde con tipo: "NECESITA_MAS_INFO"
 5. Si es válido responde con tipo: "APROBADO"
 
@@ -20,41 +20,29 @@ CATEGORÍAS VÁLIDAS: Fugas, Medidores, Presión baja, Calidad del agua, Conexi�
 
 PRIORIDADES:
 - BAJA: problema menor, no urgente
-- MEDIA: afecta el servicio pero no es emergencia  
+- MEDIA: afecta el servicio pero no es emergencia
 - ALTA: afecta severamente el servicio
 - EXTREMA: emergencia inmediata (inundación, rotura de tubería principal)
 
-DIFICULTAD DE LA TAREA PARA EL TÉCNICO:
+DIFICULTAD DE LA TAREA:
 - SIMPLE: trabajo de menos de 1 hora
 - MODERADO: trabajo de 1 a 3 horas
 - COMPLEJO: trabajo de más de 3 horas o requiere equipo especial
 
-Responde ÚNICAMENTE en este formato JSON exacto, sin texto adicional:
-{
-  "tipo": "APROBADO|RECHAZADO|NECESITA_MAS_INFO",
-  "categoria": "nombre de la categoría o null",
-  "prioridad": "BAJA|MEDIA|ALTA|EXTREMA o null",
-  "dificultad": "SIMPLE|MODERADO|COMPLEJO o null",
-  "reporte": "descripción técnica breve para el técnico, máximo 200 caracteres, o null",
-  "mensaje_cliente": "mensaje para mostrar al cliente explicando la decisión"
-}
+Descripción del reclamo: "${description}"
+
+Responde ÚNICAMENTE en este formato JSON exacto, sin texto adicional, sin markdown, sin backticks:
+{"tipo":"APROBADO","categoria":"nombre categoria","prioridad":"BAJA|MEDIA|ALTA|EXTREMA","dificultad":"SIMPLE|MODERADO|COMPLEJO","reporte":"descripción técnica breve máximo 200 caracteres","mensaje_cliente":"mensaje para el cliente"}
 `
 
-  const parts = [{ text: prompt }, { text: `Descripción del reclamo: ${description}` }]
+  const completion = await groq.chat.completions.create({
+    messages: [{ role: 'user', content: prompt }],
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.3,
+    max_tokens: 500
+  })
 
-  if (imageBase64) {
-    parts.push({
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: imageBase64
-      }
-    })
-  }
-
-  const result = await model.generateContent(parts)
-  const response = result.response.text()
-
-  // Limpiar respuesta y parsear JSON
+  const response = completion.choices[0]?.message?.content || ''
   const cleaned = response.replace(/```json|```/g, '').trim()
   const parsed = JSON.parse(cleaned)
 

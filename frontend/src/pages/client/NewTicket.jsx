@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
-import { ArrowLeft, Camera, X, Loader, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Camera, X, Loader, CheckCircle, AlertTriangle, RefreshCw, XCircle } from 'lucide-react'
 
 const PHASES = [
   'Analizando descripción...',
@@ -48,25 +48,36 @@ export default function NewTicket() {
     setLoading(true)
     setPhase(0)
 
-    // Simular fases de análisis
-    const interval = setInterval(() => {
-      setPhase(prev => {
-        if (prev < PHASES.length - 1) return prev + 1
-        clearInterval(interval)
-        return prev
-      })
-    }, 800)
+    // Llamada a la API en paralelo con la animación
+    const apiPromise = api.post('/triage/analyze', {
+      description: form.description,
+      reference_point: form.reference_point,
+      imageBase64: imageBase64 || null
+    })
+
+    // Avanzar fases con tiempos definidos independientemente de la API
+    const phaseDurations = [1200, 1000, 1000, 900, 800] // duración en ms para cada fase
+    let currentPhase = 0
+
+    const advancePhase = () => {
+      if (currentPhase < PHASES.length - 1) {
+        currentPhase++
+        setPhase(currentPhase)
+        setTimeout(advancePhase, phaseDurations[currentPhase])
+      }
+    }
+    setTimeout(advancePhase, phaseDurations[0])
+
+    // Esperar mínimo 5 segundos aunque la API responda antes
+    const minWait = new Promise(resolve => setTimeout(resolve, 5000))
 
     try {
-      const { data } = await api.post('/triage/analyze', {
-        description: form.description,
-        reference_point: form.reference_point,
-        imageBase64: imageBase64 || null
-      })
-      clearInterval(interval)
+      const [{ data }] = await Promise.all([apiPromise, minWait])
+      // Asegurarse que llegamos a la última fase
+      setPhase(PHASES.length - 1)
+      await new Promise(resolve => setTimeout(resolve, 600))
       setResult(data)
     } catch (err) {
-      clearInterval(interval)
       setError(err.response?.data?.error || 'Error al procesar el reclamo')
     } finally {
       setLoading(false)
