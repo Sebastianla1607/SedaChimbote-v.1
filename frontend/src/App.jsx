@@ -11,6 +11,8 @@ import AdminNewTicket from './pages/admin/NewTicket'
 import NewTech from './pages/admin/NewTech'
 import TicketInProgress from './pages/client/TicketInProgress'
 import Profile from './pages/client/Profile'
+import TechProfile from './pages/tech/Profile'
+
 
 
 
@@ -49,6 +51,7 @@ function App() {
       <Route path="/admin/new-tech" element={<PrivateRoute roles={['ADM_', 'JEF_']}><NewTech /></PrivateRoute>} />
       <Route path="/client/ticket/:id" element={<PrivateRoute roles={['CLI_']}><TicketInProgress /></PrivateRoute>} />
       <Route path="/client/profile" element={<PrivateRoute roles={['CLI_']}><Profile /></PrivateRoute>} />
+      <Route path="/tech/profile" element={<PrivateRoute roles={['ESP_']}><TechProfile /></PrivateRoute>} />
     </Routes>
   )
 }

@@ -245,12 +245,12 @@ export default function TechDashboard() {
             <span className="text-xs">Mapa</span>
           </button>
           <button
-            onClick={logout}
-            className="flex flex-col items-center gap-1 text-gray-400"
-          >
-            <User className="w-5 h-5" />
-            <span className="text-xs">Perfil</span>
-          </button>
+  onClick={() => navigate('/tech/profile')}
+  className="flex flex-col items-center gap-1 text-gray-400"
+>
+  <User className="w-5 h-5" />
+  <span className="text-xs">Perfil</span>
+</button>
         </div>
       </div>
 
