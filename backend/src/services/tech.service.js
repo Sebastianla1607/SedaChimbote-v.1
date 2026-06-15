@@ -27,7 +27,7 @@ const getTechTickets = async (techId) => {
   return { active: tickets, waiting_close: waitingClose }
 }
 
-// Técnico acepta ticket — notifica al cliente ¿estás en casa?
+// Técnico acepta ticket
 const startRoute = async (techId, ticketId) => {
   const tech = await prisma.user.findUnique({ where: { id: techId } })
   if (tech.is_wip_locked) throw new Error('Ya tienes un ticket activo en curso')
@@ -37,12 +37,33 @@ const startRoute = async (techId, ticketId) => {
   if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
   if (ticket.status !== 'ASIGNADO') throw new Error('El ticket no está en estado ASIGNADO')
 
-  // Bloquear WIP del técnico
   await prisma.user.update({
     where: { id: techId },
     data: { is_wip_locked: true }
   })
 
+  // Ticket INTERNO — va directo a EN_CAMINO sin esperar cliente
+  if (ticket.origin === 'INTERNO') {
+    const updated = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { status: 'EN_CAMINO' }
+    })
+
+    await prisma.ticketLog.create({
+      data: {
+        ticket_id: ticketId,
+        user_id: techId,
+        action: 'EN_CAMINO',
+        from_status: 'ASIGNADO',
+        to_status: 'EN_CAMINO',
+        note: 'Ticket interno — técnico en camino directo a la ubicación'
+      }
+    })
+
+    return { message: 'Ticket interno aceptado, dirígete a la ubicación', ticket: updated, origin: 'INTERNO' }
+  }
+
+  // Ticket CIUDADANO — espera confirmación del cliente
   await prisma.ticketLog.create({
     data: {
       ticket_id: ticketId,
@@ -54,7 +75,6 @@ const startRoute = async (techId, ticketId) => {
     }
   })
 
-  // Notificar al cliente
   await prisma.notification.create({
     data: {
       user_id: ticket.created_by_id,
@@ -63,7 +83,7 @@ const startRoute = async (techId, ticketId) => {
     }
   })
 
-  return { message: 'Ticket aceptado, cliente notificado' }
+  return { message: 'Ticket aceptado, esperando confirmación del cliente', origin: 'CIUDADANO' }
 }
 
 // Técnico confirma que el cliente está en casa y sale hacia la vivienda
@@ -71,6 +91,7 @@ const goToLocation = async (techId, ticketId) => {
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
   if (!ticket) throw new Error('Ticket no encontrado')
   if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
+  if (ticket.origin === 'INTERNO') throw new Error('Los tickets internos no requieren confirmación del cliente')
   if (ticket.status !== 'ASIGNADO') throw new Error('El cliente aún no ha confirmado que está en casa')
 
   const updated = await prisma.ticket.update({
@@ -89,7 +110,6 @@ const goToLocation = async (techId, ticketId) => {
     }
   })
 
-  // Notificar al cliente
   await prisma.notification.create({
     data: {
       user_id: ticket.created_by_id,
@@ -119,16 +139,18 @@ const arrivedAtLocation = async (techId, ticketId) => {
     }
   })
 
-  // Notificar al cliente
-  await prisma.notification.create({
-    data: {
-      user_id: ticket.created_by_id,
-      ticket_id: ticketId,
-      message: `El técnico está afuera de tu vivienda. Por favor, acércate a atenderlo.`
-    }
-  })
+  // Solo notificar al cliente si es ticket CIUDADANO
+  if (ticket.origin === 'CIUDADANO') {
+    await prisma.notification.create({
+      data: {
+        user_id: ticket.created_by_id,
+        ticket_id: ticketId,
+        message: `El técnico está afuera de tu vivienda. Por favor, acércate a atenderlo.`
+      }
+    })
+  }
 
-  return { message: 'Cliente notificado, esperando que abra la puerta' }
+  return { message: ticket.origin === 'INTERNO' ? 'Llegaste a la ubicación' : 'Cliente notificado, esperando que abra la puerta' }
 }
 
 // Cliente ausente
@@ -166,7 +188,6 @@ const clientAbsent = async (techId, ticketId, data) => {
     }
   })
 
-  // Liberar WIP del técnico
   await prisma.user.update({
     where: { id: techId },
     data: { is_wip_locked: false }
@@ -175,7 +196,7 @@ const clientAbsent = async (techId, ticketId, data) => {
   return { message: 'Ticket marcado como observado, puedes tomar otro ticket' }
 }
 
-// Iniciar ejecución (cliente abrió la puerta)
+// Iniciar ejecución
 const startExecution = async (techId, ticketId) => {
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
   if (!ticket) throw new Error('Ticket no encontrado')
@@ -194,7 +215,9 @@ const startExecution = async (techId, ticketId) => {
       action: 'EJECUCION_ACTIVA',
       from_status: 'EN_CAMINO',
       to_status: 'EJECUCION_ACTIVA',
-      note: 'Cliente abrió la puerta, técnico inició ejecución'
+      note: ticket.origin === 'INTERNO'
+        ? 'Técnico inició trabajo en la ubicación'
+        : 'Cliente abrió la puerta, técnico inició ejecución'
     }
   })
 
