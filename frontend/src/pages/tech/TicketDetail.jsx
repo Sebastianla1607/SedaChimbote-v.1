@@ -71,6 +71,7 @@ export default function TicketDetail() {
   // ✅ Detectar estado de confirmación y aceptación desde los logs
   const clientConfirmed = ticket?.logs?.some(l => l.action === 'CLIENTE_EN_CASA')
   const techAccepted = ticket?.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando'))
+  const techArrived = ticket?.logs?.some(l => l.action === 'TECNICO_AFUERA')
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
@@ -199,7 +200,7 @@ export default function TicketDetail() {
         </div>
 
         {/* ✅ Bloque informativo de espera (sin toggle manual) */}
-        {ticket.status === 'ASIGNADO' && techAccepted && !clientConfirmed && (
+        {ticket.status === 'ASIGNADO' && techAccepted && !clientConfirmed && ticket.origin === 'CIUDADANO' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-yellow-600" />
@@ -303,9 +304,10 @@ export default function TicketDetail() {
 
       </div>
 
+      {/* ✅ NUEVA SECCIÓN DE BOTONES CON DIFERENCIACIÓN POR ORIGEN */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-4 space-y-2">
 
-        {/* Botón Aceptar (solo si no hay log de "esperando") */}
+        {/* ASIGNADO — antes de aceptar */}
         {ticket.status === 'ASIGNADO' && !techAccepted && (
           <button
             onClick={() => handleAction('start')}
@@ -317,19 +319,20 @@ export default function TicketDetail() {
           </button>
         )}
 
-        {/* ✅ Botón "Yendo" se muestra solo cuando techAccepted y clientConfirmed son true */}
-        {ticket.status === 'ASIGNADO' && techAccepted && clientConfirmed && (
+        {/* ASIGNADO — ticket CIUDADANO esperando cliente */}
+        {ticket.status === 'ASIGNADO' && techAccepted && ticket.origin === 'CIUDADANO' && (
           <button
             onClick={() => handleAction('go')}
-            disabled={actionLoading}
+            disabled={actionLoading || !clientConfirmed}
             className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            Yendo a la vivienda 🚗
+            {clientConfirmed ? 'Yendo a la vivienda 🚗' : 'Esperando confirmación del cliente...'}
           </button>
         )}
 
-        {ticket.status === 'EN_CAMINO' && (
+        {/* EN_CAMINO — ticket CIUDADANO (antes de llegar) */}
+        {ticket.status === 'EN_CAMINO' && ticket.origin === 'CIUDADANO' && !techArrived && (
           <>
             <button
               onClick={() => handleAction('arrived')}
@@ -348,24 +351,56 @@ export default function TicketDetail() {
           </>
         )}
 
-        {ticket.status === 'EN_CAMINO' && ticket.logs?.some(l => l.action === 'TECNICO_AFUERA') && (
+        {/* EN_CAMINO — ticket CIUDADANO después de llegar */}
+        {ticket.status === 'EN_CAMINO' && ticket.origin === 'CIUDADANO' && techArrived && (
+          <>
+            <button
+              onClick={() => handleAction('execute')}
+              disabled={actionLoading}
+              className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Cliente Abrió la Puerta
+            </button>
+            <button
+              onClick={() => setShowAbsentForm(true)}
+              className="w-full border border-orange-400 text-orange-500 font-semibold py-2.5 rounded-xl text-sm"
+            >
+              Cliente No Abrió / Ausente
+            </button>
+          </>
+        )}
+
+        {/* EN_CAMINO — ticket INTERNO antes de llegar */}
+        {ticket.status === 'EN_CAMINO' && ticket.origin === 'INTERNO' && !techArrived && (
+          <button
+            onClick={() => handleAction('arrived')}
+            disabled={actionLoading}
+            className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+            Llegué a la Ubicación
+          </button>
+        )}
+
+        {/* EN_CAMINO — ticket INTERNO después de llegar */}
+        {ticket.status === 'EN_CAMINO' && ticket.origin === 'INTERNO' && techArrived && (
           <button
             onClick={() => handleAction('execute')}
             disabled={actionLoading}
             className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-            Cliente Abrió la Puerta
+            Iniciar Trabajo
           </button>
         )}
 
-        {/* ✅ NUEVO BLOQUE para EJECUCION_ACTIVA con validación de conformidad */}
+        {/* EJECUCION_ACTIVA */}
         {ticket.status === 'EJECUCION_ACTIVA' && (
           <div className="space-y-2">
-            {/* Mostrar mensaje de espera si es ciudadano y no ha confirmado */}
             {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO' && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-center gap-2">
-                <span className="text-yellow-600 text-sm">⏳ Esperando que el cliente confirme la conformidad del trabajo...</span>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+                <p className="text-yellow-600 text-sm text-center">⏳ Esperando conformidad del cliente...</p>
               </div>
             )}
             <button
@@ -381,6 +416,7 @@ export default function TicketDetail() {
           </div>
         )}
 
+        {/* PRE_CERRADO */}
         {ticket.status === 'PRE_CERRADO' && (
           <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 text-center">
             <CheckCircle className="w-8 h-8 text-teal-500 mx-auto mb-2" />
@@ -389,6 +425,7 @@ export default function TicketDetail() {
           </div>
         )}
 
+        {/* OBSERVADO */}
         {ticket.status === 'OBSERVADO' && (
           <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
             <AlertTriangle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
