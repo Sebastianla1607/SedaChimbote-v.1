@@ -758,22 +758,22 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Encuesta cliente */}
+              {/* ✅ Encuesta cliente - Mejorada con estrellas más grandes y comentario en recuadro blanco */}
               {ticketHistory.client_survey && (
                 <div className="bg-green-50 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-green-700 mb-2 uppercase">
+                  <p className="text-xs font-semibold text-green-700 mb-3 uppercase">
                     Calificación del Cliente
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-2">
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
-                          className={
+                          className={`text-xl ${
                             star <= ticketHistory.client_survey.nps_score
                               ? "text-yellow-400"
                               : "text-gray-300"
-                          }
+                          }`}
                         >
                           ★
                         </span>
@@ -784,9 +784,14 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                   {ticketHistory.client_survey.comment && (
-                    <p className="text-sm text-gray-600 mt-2 italic">
-                      "{ticketHistory.client_survey.comment}"
-                    </p>
+                    <div className="bg-white rounded-lg p-3 mt-2">
+                      <p className="text-xs text-gray-500 font-semibold mb-1">
+                        COMENTARIO DEL CLIENTE
+                      </p>
+                      <p className="text-sm text-gray-700 italic">
+                        "{ticketHistory.client_survey.comment}"
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

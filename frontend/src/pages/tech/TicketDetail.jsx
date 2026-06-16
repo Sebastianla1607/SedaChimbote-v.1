@@ -84,18 +84,20 @@ export default function TicketDetail() {
     </div>
   )
 
-  const isWip = ticket.status === 'EN_CAMINO' || ticket.status === 'EJECUCION_ACTIVA'
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
 
+      {/* Header con botón de volver bloqueado si está en EN_CAMINO o EJECUCION_ACTIVA */}
       <div className="bg-[#1a237e] px-4 pt-10 pb-4 flex items-center gap-3">
         <button
           onClick={() => {
-            if (isWip) return
+            if (['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(ticket.status)) {
+              alert('No puedes salir mientras tienes una tarea activa')
+              return
+            }
             navigate('/tech/dashboard')
           }}
-          className={`${isWip ? 'text-blue-400 cursor-not-allowed' : 'text-white'}`}
+          className={`${['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(ticket.status) ? 'text-blue-400 cursor-not-allowed' : 'text-white'}`}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -357,14 +359,26 @@ export default function TicketDetail() {
           </button>
         )}
 
+        {/* ✅ NUEVO BLOQUE para EJECUCION_ACTIVA con validación de conformidad */}
         {ticket.status === 'EJECUCION_ACTIVA' && (
-          <button
-            onClick={() => setShowReportForm(true)}
-            className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
-          >
-            <Camera className="w-4 h-4" />
-            Subir Evidencia y Finalizar
-          </button>
+          <div className="space-y-2">
+            {/* Mostrar mensaje de espera si es ciudadano y no ha confirmado */}
+            {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO' && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-center gap-2">
+                <span className="text-yellow-600 text-sm">⏳ Esperando que el cliente confirme la conformidad del trabajo...</span>
+              </div>
+            )}
+            <button
+              onClick={() => setShowReportForm(true)}
+              disabled={!ticket.is_client_conformed && ticket.origin === 'CIUDADANO'}
+              className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Camera className="w-4 h-4" />
+              {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO'
+                ? 'Esperando conformidad del cliente'
+                : 'Subir Evidencia y Finalizar'}
+            </button>
+          </div>
         )}
 
         {ticket.status === 'PRE_CERRADO' && (

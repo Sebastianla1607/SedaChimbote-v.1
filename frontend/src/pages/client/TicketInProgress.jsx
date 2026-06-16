@@ -36,7 +36,6 @@ export default function TicketInProgress() {
       const { data } = await api.get(`/tickets/${id}`)
       setTicket(data.ticket)
       if (data.ticket.client_survey) setSurveyDone(true)
-      // Verificar si ya respondió presencia
       const presenceLog = data.ticket.logs?.find(l =>
         l.action === 'CLIENTE_EN_CASA' || l.action === 'CLIENTE_AUSENTE'
       )
@@ -61,10 +60,21 @@ export default function TicketInProgress() {
     }
   }
 
+  // ✅ handleConformity actualizado: envía conformidad + encuesta si hay puntuación
   const handleConformity = async () => {
     setActionLoading(true)
     try {
       await api.post(`/tickets/${id}/conformity`, { comment: conformityComment })
+
+      // Guardar encuesta NPS junto con la conformidad
+      if (npsScore > 0) {
+        await api.post(`/tickets/${id}/survey`, {
+          nps_score: npsScore,
+          comment: conformityComment
+        })
+        setSurveyDone(true)
+      }
+
       setShowConformity(false)
       await fetchTicket()
     } catch (err) {
@@ -102,9 +112,40 @@ export default function TicketInProgress() {
 
   if (!ticket) return null
 
-  const currentStep = getCurrentStep()
+  // ✅ Verificación: si el ticket está ASIGNADO pero el técnico aún no lo ha aceptado,
+  // mostrar pantalla de espera.
+  const techAccepted = ticket?.logs?.some(l => 
+    l.action === 'ASIGNADO' && l.note?.includes('esperando')
+  )
 
-  // Ver si técnico ya llegó (log TECNICO_AFUERA)
+  if (ticket.status === 'ASIGNADO' && !techAccepted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+        <div className="bg-[#1a237e] px-4 pt-10 pb-4 flex items-center gap-3">
+          <button onClick={() => navigate('/dashboard')} className="text-white">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-white font-bold">Estado del Reclamo</h1>
+            <p className="text-blue-300 text-xs font-mono">{ticket.code}</p>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-8 h-8 text-[#1a237e]" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">Reclamo en cola</h2>
+          <p className="text-gray-500 text-sm mb-4">Tu reclamo ha sido asignado a un técnico. Pronto comenzará la atención.</p>
+          <div className="bg-[#1a237e] rounded-xl p-4 w-full">
+            <p className="text-blue-300 text-xs font-semibold mb-1">CÓDIGO</p>
+            <p className="text-white font-bold font-mono">{ticket.code}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const currentStep = getCurrentStep()
   const techArrived = ticket.logs?.some(l => l.action === 'TECNICO_AFUERA')
 
   return (
@@ -203,11 +244,11 @@ export default function TicketInProgress() {
           </div>
         )}
 
-        {/* Ejecución activa — dar conformidad */}
-        {ticket.status === 'EJECUCION_ACTIVA' && !ticket.is_client_conformed && (
+        {/* ✅ Conformidad: ahora también visible en PRE_CERRADO mientras no se haya confirmado */}
+        {(ticket.status === 'EJECUCION_ACTIVA' || ticket.status === 'PRE_CERRADO') && !ticket.is_client_conformed && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4">
             <p className="text-green-700 font-semibold text-sm mb-1">El técnico está trabajando en tu problema</p>
-            <p className="text-green-600 text-xs mb-3">Cuando termine, confirma que el trabajo quedó correcto.</p>
+            <p className="text-green-600 text-xs mb-3">Cuando el técnico termine, confirma que el trabajo quedó correcto.</p>
             <button
               onClick={() => setShowConformity(true)}
               className="w-full bg-green-600 text-white font-semibold py-2.5 rounded-lg text-sm"
@@ -217,15 +258,16 @@ export default function TicketInProgress() {
           </div>
         )}
 
-        {ticket.is_client_conformed && ticket.status === 'EJECUCION_ACTIVA' && (
+        {/* Conformidad ya registrada */}
+        {ticket.is_client_conformed && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-600" />
             <p className="text-green-700 text-sm font-semibold">Conformidad registrada ✅</p>
           </div>
         )}
 
-        {/* Pre-cerrado */}
-        {ticket.status === 'PRE_CERRADO' && (
+        {/* Pre-cerrado (solo informativo si no se ha mostrado el bloque anterior) */}
+        {ticket.status === 'PRE_CERRADO' && ticket.is_client_conformed && (
           <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-teal-600" />
             <div>
@@ -235,7 +277,7 @@ export default function TicketInProgress() {
           </div>
         )}
 
-        {/* Cerrado — encuesta */}
+        {/* Cerrado — encuesta (solo si no se envió en conformidad) */}
         {ticket.status === 'CERRADO' && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
             <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -294,12 +336,31 @@ export default function TicketInProgress() {
 
       </div>
 
-      {/* Modal conformidad */}
+      {/* ✅ Modal conformidad con estrellas */}
       {showConformity && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className="bg-white rounded-t-2xl w-full p-6">
             <h3 className="font-bold text-gray-800 mb-2">Conformidad del Trabajo</h3>
             <p className="text-gray-500 text-sm mb-4">¿El técnico resolvió correctamente el problema?</p>
+
+            {/* Estrellas */}
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Calificación</p>
+            <div className="flex justify-center gap-3 mb-2">
+              {[1,2,3,4,5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => setNpsScore(star)}
+                  className={`text-3xl transition ${star <= npsScore ? 'text-yellow-400' : 'text-gray-300'}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-gray-400 mb-4 px-1">
+              <span>1 - Muy insatisfecho</span>
+              <span>5 - Muy satisfecho</span>
+            </div>
+
             <textarea
               value={conformityComment}
               onChange={(e) => setConformityComment(e.target.value)}
@@ -316,7 +377,7 @@ export default function TicketInProgress() {
               </button>
               <button
                 onClick={handleConformity}
-                disabled={actionLoading}
+                disabled={actionLoading || npsScore === 0}
                 className="flex-1 bg-[#1a237e] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-50"
               >
                 {actionLoading ? 'Enviando...' : 'Confirmar'}
@@ -326,7 +387,7 @@ export default function TicketInProgress() {
         </div>
       )}
 
-      {/* Modal encuesta NPS */}
+      {/* Modal encuesta NPS (se mantiene como respaldo si no se envió en conformidad) */}
       {showSurvey && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className="bg-white rounded-t-2xl w-full p-6">

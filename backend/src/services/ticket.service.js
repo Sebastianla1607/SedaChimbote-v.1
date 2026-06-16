@@ -142,7 +142,7 @@ const createTicket = async (userId, data) => {
   return ticket
 }
 
-// Obtener tickets del cliente
+// ✅ Actualizado: incluye logs para detectar si el técnico aceptó
 const getClientTickets = async (userId) => {
   const tickets = await prisma.ticket.findMany({
     where: { created_by_id: userId },
@@ -158,13 +158,18 @@ const getClientTickets = async (userId) => {
       due_date: true,
       assigned_esp: {
         select: { access_code: true }
+      },
+      logs: {
+        select: { action: true, note: true },
+        orderBy: { created_at: 'asc' }
       }
     }
   })
 
   return tickets.map(ticket => ({
     ...ticket,
-    days_elapsed: Math.floor((new Date() - new Date(ticket.created_at)) / (1000 * 60 * 60 * 24))
+    days_elapsed: Math.floor((new Date() - new Date(ticket.created_at)) / (1000 * 60 * 60 * 24)),
+    tech_accepted: ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando'))
   }))
 }
 

@@ -271,13 +271,11 @@ export default function ClientDashboard() {
             <div
               key={ticket.id}
               onClick={() => {
+                // ✅ Lógica actualizada: redirige si está en estados activos
+                // o si es ASIGNADO y el técnico ya aceptó (tech_accepted)
                 if (
-                  [
-                    "EN_CAMINO",
-                    "EJECUCION_ACTIVA",
-                    "PRE_CERRADO",
-                    "ASIGNADO",
-                  ].includes(ticket.status)
+                  ['EN_CAMINO', 'EJECUCION_ACTIVA', 'PRE_CERRADO', 'CERRADO'].includes(ticket.status) ||
+                  (ticket.status === 'ASIGNADO' && ticket.tech_accepted)
                 ) {
                   navigate(`/client/ticket/${ticket.id}`);
                 } else {
@@ -338,7 +336,7 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      {/* Botón flotante unificado (cambio aplicado) */}
+      {/* Botón flotante unificado */}
       {tab === "activos" && (
         <button
           onClick={() => {

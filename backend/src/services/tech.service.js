@@ -224,18 +224,27 @@ const startExecution = async (techId, ticketId) => {
   return updated
 }
 
-// Técnico envía reporte y solicita pre-cierre
+// ✅ Técnico envía reporte SOLO si el cliente ha dado conformidad (para tickets ciudadanos)
 const submitTechReport = async (techId, ticketId, data) => {
   const { description, image_urls } = data
 
   if (!description) throw new Error('La descripción del reporte es obligatoria')
   if (!image_urls || image_urls.length === 0) throw new Error('Debes subir al menos una foto')
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { logs: true } // incluye logs para posibles validaciones futuras
+  })
   if (!ticket) throw new Error('Ticket no encontrado')
   if (ticket.assigned_esp_id !== techId) throw new Error('Este ticket no te pertenece')
   if (ticket.status !== 'EJECUCION_ACTIVA') throw new Error('El ticket no está en ejecución activa')
 
+  // 🔥 VALIDACIÓN CLAVE: el técnico NO puede enviar reporte si el cliente no ha dado conformidad (solo para ciudadanos)
+  if (ticket.origin === 'CIUDADANO' && !ticket.is_client_conformed) {
+    throw new Error('Debes esperar que el cliente confirme la conformidad del trabajo antes de enviar el reporte')
+  }
+
+  // Guardar reporte técnico
   await prisma.techReport.create({
     data: {
       ticket_id: ticketId,
@@ -245,6 +254,7 @@ const submitTechReport = async (techId, ticketId, data) => {
     }
   })
 
+  // Guardar evidencias
   await prisma.evidence.createMany({
     data: image_urls.map(url => ({
       ticket_id: ticketId,
@@ -254,16 +264,19 @@ const submitTechReport = async (techId, ticketId, data) => {
     }))
   })
 
+  // Cambiar estado a PRE_CERRADO
   await prisma.ticket.update({
     where: { id: ticketId },
     data: { status: 'PRE_CERRADO' }
   })
 
+  // Liberar al técnico
   await prisma.user.update({
     where: { id: techId },
     data: { is_wip_locked: false }
   })
 
+  // Log
   await prisma.ticketLog.create({
     data: {
       ticket_id: ticketId,
@@ -275,6 +288,7 @@ const submitTechReport = async (techId, ticketId, data) => {
     }
   })
 
+  // Notificar a administradores
   const admins = await prisma.user.findMany({ where: { role: 'ADM_', is_active: true } })
   await prisma.notification.createMany({
     data: admins.map(admin => ({
@@ -287,4 +301,13 @@ const submitTechReport = async (techId, ticketId, data) => {
   return { message: 'Reporte enviado, ticket en espera de aprobación' }
 }
 
-module.exports = { getTechTickets, startRoute, goToLocation, arrivedAtLocation, clientAbsent, startExecution, submitTechReport }
+// ✅ Exportación al final (orden correcto)
+module.exports = {
+  getTechTickets,
+  startRoute,
+  goToLocation,
+  arrivedAtLocation,
+  clientAbsent,
+  startExecution,
+  submitTechReport
+}
