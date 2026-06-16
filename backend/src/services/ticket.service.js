@@ -168,6 +168,7 @@ const getClientTickets = async (userId) => {
   }))
 }
 
+// ✅ Actualizado: incluye logs completos con todos los campos
 const getTicketDetail = async (ticketId, userId, role) => {
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
@@ -177,7 +178,15 @@ const getTicketDetail = async (ticketId, userId, role) => {
       evidences: true,
       logs: {
         orderBy: { created_at: 'asc' },
-        select: { action: true, note: true, created_at: true }
+        select: {
+          id: true,
+          user_id: true,
+          action: true,
+          from_status: true,
+          to_status: true,
+          note: true,
+          created_at: true
+        }
       },
       tech_report: true,
       client_survey: true

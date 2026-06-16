@@ -73,7 +73,11 @@ const respondPresence = async (req, res) => {
     const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
     if (!ticket) return res.status(404).json({ error: 'Ticket no encontrado' })
     if (ticket.created_by_id !== req.user.id) return res.status(403).json({ error: 'No tienes permiso' })
-    if (ticket.status !== 'EN_CAMINO') return res.status(400).json({ error: 'El técnico aún no está en camino' })
+
+    // ✅ Corregido: permitir respuesta cuando el ticket está ASIGNADO (esperando confirmación) o EN_CAMINO
+    if (ticket.status !== 'ASIGNADO' && ticket.status !== 'EN_CAMINO') {
+      return res.status(400).json({ error: 'No es el momento para responder presencia' })
+    }
 
     const action = is_home ? 'CLIENTE_EN_CASA' : 'CLIENTE_AUSENTE'
     const note = is_home ? 'Cliente confirmó que está en casa' : 'Cliente confirmó que no está en casa'
@@ -83,25 +87,27 @@ const respondPresence = async (req, res) => {
         ticket_id: ticketId,
         user_id: req.user.id,
         action,
-        from_status: 'EN_CAMINO',
-        to_status: 'EN_CAMINO',
+        from_status: ticket.status,
+        to_status: ticket.status,
         note
       }
     })
 
-    // Notificar al técnico
+    // Notificación mejorada para el técnico
     await prisma.notification.create({
       data: {
         user_id: ticket.assigned_esp_id,
         ticket_id: ticketId,
         message: is_home
-          ? 'El cliente confirmó que está en casa, dirígete a la vivienda'
-          : 'El cliente confirmó que no está en casa, puedes tomar otro ticket'
+          ? '✅ El cliente confirmó que está en casa, puedes dirigirte a la vivienda'
+          : '❌ El cliente confirmó que no está en casa'
       }
     })
 
     res.json({
-      message: is_home ? 'Confirmado, el técnico se dirigirá a tu vivienda' : 'Entendido, el técnico será notificado',
+      message: is_home
+        ? 'Confirmado, el técnico se dirigirá a tu vivienda'
+        : 'Entendido, el técnico será notificado',
       is_home
     })
 
@@ -137,7 +143,6 @@ const submitConformity = async (req, res) => {
       }
     })
 
-    // Notificar al técnico
     await prisma.notification.create({
       data: {
         user_id: ticket.assigned_esp_id,

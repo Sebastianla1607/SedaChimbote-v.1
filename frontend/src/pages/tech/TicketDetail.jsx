@@ -23,11 +23,11 @@ export default function TicketDetail() {
   const [absentNote, setAbsentNote] = useState('')
   const [reportDesc, setReportDesc] = useState('')
   const [reportImages, setReportImages] = useState([])
-  const [clientConfirmed, setClientConfirmed] = useState(false)
 
+  // ✅ Polling cada 5 segundos
   useEffect(() => {
     fetchTicket()
-    const interval = setInterval(fetchTicket, 10000)
+    const interval = setInterval(fetchTicket, 5000)
     return () => clearInterval(interval)
   }, [id])
 
@@ -67,6 +67,10 @@ export default function TicketDetail() {
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${ticket.latitude},${ticket.longitude}`, '_blank')
     }
   }
+
+  // ✅ Detectar estado de confirmación y aceptación desde los logs
+  const clientConfirmed = ticket?.logs?.some(l => l.action === 'CLIENTE_EN_CASA')
+  const techAccepted = ticket?.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando'))
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
@@ -192,23 +196,16 @@ export default function TicketDetail() {
           </p>
         </div>
 
-        {/* Estado esperando cliente */}
-        {ticket.status === 'ASIGNADO' && ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando')) && (
+        {/* ✅ Bloque informativo de espera (sin toggle manual) */}
+        {ticket.status === 'ASIGNADO' && techAccepted && !clientConfirmed && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-yellow-600" />
-              <p className="text-yellow-700 font-semibold text-sm">Esperando respuesta del cliente</p>
+              <p className="text-yellow-700 font-semibold text-sm">Esperando confirmación del cliente</p>
             </div>
-            <p className="text-yellow-600 text-xs mb-3">Se notificó al cliente para confirmar si está en casa. Cuando confirme podrás iniciar el viaje.</p>
-            <div className="bg-white rounded-lg p-3 flex items-center justify-between">
-              <span className="text-sm text-gray-600">¿Cliente confirmó?</span>
-              <button
-                onClick={() => setClientConfirmed(!clientConfirmed)}
-                className={`text-xs font-semibold px-3 py-1 rounded-full ${clientConfirmed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-              >
-                {clientConfirmed ? '✅ Sí confirmó' : 'Pendiente'}
-              </button>
-            </div>
+            <p className="text-yellow-600 text-xs">
+              El cliente ha sido notificado. Espera su respuesta para iniciar el viaje.
+            </p>
           </div>
         )}
 
@@ -306,7 +303,8 @@ export default function TicketDetail() {
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-4 space-y-2">
 
-        {ticket.status === 'ASIGNADO' && !ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando')) && (
+        {/* Botón Aceptar (solo si no hay log de "esperando") */}
+        {ticket.status === 'ASIGNADO' && !techAccepted && (
           <button
             onClick={() => handleAction('start')}
             disabled={actionLoading}
@@ -317,14 +315,15 @@ export default function TicketDetail() {
           </button>
         )}
 
-        {ticket.status === 'ASIGNADO' && ticket.logs?.some(l => l.action === 'ASIGNADO' && l.note?.includes('esperando')) && (
+        {/* ✅ Botón "Yendo" se muestra solo cuando techAccepted y clientConfirmed son true */}
+        {ticket.status === 'ASIGNADO' && techAccepted && clientConfirmed && (
           <button
             onClick={() => handleAction('go')}
-            disabled={actionLoading || !clientConfirmed}
+            disabled={actionLoading}
             className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            {clientConfirmed ? 'Yendo a la vivienda 🚗' : 'Esperando confirmación del cliente...'}
+            Yendo a la vivienda 🚗
           </button>
         )}
 
