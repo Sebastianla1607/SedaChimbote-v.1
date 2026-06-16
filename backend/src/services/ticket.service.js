@@ -19,11 +19,42 @@ const generateTicketCode = async () => {
   return `REC-${dateStr}-${String(sequence).padStart(4, '0')}`
 }
 
+const autoAssignTech = async (specialty, prisma) => {
+  // Buscar técnicos disponibles con la especialidad correcta
+  const techs = await prisma.user.findMany({
+    where: {
+      role: 'ESP_',
+      is_active: true,
+      is_wip_locked: false,
+      specialties: {
+        some: {
+          specialty: {
+            name: { contains: specialty, mode: 'insensitive' }
+          }
+        }
+      }
+    },
+    include: {
+      tickets_assigned: {
+        where: { status: { notIn: ['CERRADO', 'OBSERVADO'] } }
+      }
+    }
+  })
+
+  if (techs.length === 0) return null
+
+  // Asignar al técnico con menos tickets activos
+  const sorted = techs.sort((a, b) =>
+    a.tickets_assigned.length - b.tickets_assigned.length
+  )
+
+  return sorted[0].id
+}
+
 // Crear ticket ciudadano
 const createTicket = async (userId, data) => {
   const { description, reference_point, ai_category, ai_priority, ai_specialty, ai_report, ai_difficulty } = data
 
-  // Verificar que el cliente no tenga un reclamo abierto
   const openTicket = await prisma.ticket.findFirst({
     where: {
       created_by_id: userId,
@@ -35,7 +66,6 @@ const createTicket = async (userId, data) => {
     throw new Error('Ya tienes un reclamo abierto. Debes esperar a que sea cerrado para crear uno nuevo.')
   }
 
-  // Obtener dirección del customer vinculado al usuario
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { customer: true }
@@ -43,9 +73,17 @@ const createTicket = async (userId, data) => {
 
   const code = await generateTicketCode()
 
-  // Calcular due_date (30 días desde hoy)
   const due_date = new Date()
   due_date.setDate(due_date.getDate() + 30)
+
+  // Intentar asignar técnico automáticamente
+  let assigned_esp_id = null
+  let initialStatus = 'PENDIENTE'
+
+  if (ai_specialty) {
+    assigned_esp_id = await autoAssignTech(ai_specialty, prisma)
+    if (assigned_esp_id) initialStatus = 'ASIGNADO'
+  }
 
   const ticket = await prisma.ticket.create({
     data: {
@@ -56,7 +94,7 @@ const createTicket = async (userId, data) => {
       address: user.customer.address,
       latitude: user.customer.latitude,
       longitude: user.customer.longitude,
-      status: 'PENDIENTE',
+      status: initialStatus,
       priority: ai_priority || 'MEDIA',
       due_date,
       ai_category: ai_category || null,
@@ -64,20 +102,42 @@ const createTicket = async (userId, data) => {
       ai_specialty: ai_specialty || null,
       ai_report: ai_report || null,
       ai_difficulty: ai_difficulty || null,
-      created_by_id: userId
+      created_by_id: userId,
+      assigned_esp_id: assigned_esp_id || null
     }
   })
 
-  // Registrar en el log
   await prisma.ticketLog.create({
     data: {
       ticket_id: ticket.id,
       user_id: userId,
       action: 'CREADO',
-      to_status: 'PENDIENTE',
-      note: 'Ticket creado por ciudadano'
+      to_status: initialStatus,
+      note: assigned_esp_id
+        ? `Ticket creado y asignado automáticamente`
+        : 'Ticket creado por ciudadano, pendiente de asignación'
     }
   })
+
+  if (assigned_esp_id) {
+    await prisma.ticketLog.create({
+      data: {
+        ticket_id: ticket.id,
+        user_id: userId,
+        action: 'ASIGNADO',
+        to_status: 'ASIGNADO',
+        note: 'Asignación automática por el sistema'
+      }
+    })
+
+    await prisma.notification.create({
+      data: {
+        user_id: assigned_esp_id,
+        ticket_id: ticket.id,
+        message: `Nuevo ticket asignado automáticamente: ${code}`
+      }
+    })
+  }
 
   return ticket
 }

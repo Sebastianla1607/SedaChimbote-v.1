@@ -815,26 +815,52 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Botones de acción */}
-              {selectedTicket.status === "PRE_CERRADO" && (
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+              {/* Botones de acción - MODIFICADO SEGÚN SOLICITUD */}
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                {/* Asignar técnico — siempre visible si no está cerrado */}
+                {selectedTicket.status !== "CERRADO" && (
                   <button
-                    onClick={() => {
-                      const note = prompt("Motivo del rechazo (obligatorio):");
-                      if (note) handleReject(selectedTicket.id, note);
+                    onClick={async () => {
+                      const espId = prompt("Ingresa el ID del técnico a asignar:");
+                      if (espId) {
+                        try {
+                          await api.patch(`/admin/tickets/${selectedTicket.id}/assign`, {
+                            esp_id: parseInt(espId),
+                          });
+                          await fetchAll();
+                          fetchHistory(selectedTicket.id);
+                          alert("Técnico asignado correctamente");
+                        } catch (err) {
+                          alert(err.response?.data?.error || "Error al asignar");
+                        }
+                      }
                     }}
-                    className="flex-1 border border-red-400 text-red-500 font-semibold py-2.5 rounded-xl text-sm"
+                    className="flex-1 border border-[#1a237e] text-[#1a237e] font-semibold py-2.5 rounded-xl text-sm"
                   >
-                    Rechazar Cierre
+                    Asignar Técnico
                   </button>
-                  <button
-                    onClick={() => handleApprove(selectedTicket.id)}
-                    className="flex-1 bg-[#1a237e] text-white font-semibold py-2.5 rounded-xl text-sm"
-                  >
-                    Aprobar Cierre
-                  </button>
-                </div>
-              )}
+                )}
+
+                {selectedTicket.status === "PRE_CERRADO" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const note = prompt("Motivo del rechazo (obligatorio):");
+                        if (note) handleReject(selectedTicket.id, note);
+                      }}
+                      className="flex-1 border border-red-400 text-red-500 font-semibold py-2.5 rounded-xl text-sm"
+                    >
+                      Rechazar Cierre
+                    </button>
+                    <button
+                      onClick={() => handleApprove(selectedTicket.id)}
+                      className="flex-1 bg-[#1a237e] text-white font-semibold py-2.5 rounded-xl text-sm"
+                    >
+                      Aprobar Cierre
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
