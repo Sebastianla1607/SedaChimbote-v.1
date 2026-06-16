@@ -14,6 +14,7 @@ import {
   UserPlus,
   X,
   Loader,
+  ChevronRight,
 } from "lucide-react";
 import logo from "../../assets/logo_chimbote.png";
 
@@ -68,6 +69,11 @@ export default function AdminDashboard() {
   const [filterPriority, setFilterPriority] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketHistory, setTicketHistory] = useState(null);
+
+  // Estados para el modal de asignación
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [techSearch, setTechSearch] = useState("");
+  const [assigningTicketId, setAssigningTicketId] = useState(null);
 
   useEffect(() => {
     fetchAll();
@@ -815,25 +821,15 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Botones de acción - MODIFICADO SEGÚN SOLICITUD */}
+              {/* Botones de acción */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 {/* Asignar técnico — siempre visible si no está cerrado */}
                 {selectedTicket.status !== "CERRADO" && (
                   <button
-                    onClick={async () => {
-                      const espId = prompt("Ingresa el ID del técnico a asignar:");
-                      if (espId) {
-                        try {
-                          await api.patch(`/admin/tickets/${selectedTicket.id}/assign`, {
-                            esp_id: parseInt(espId),
-                          });
-                          await fetchAll();
-                          fetchHistory(selectedTicket.id);
-                          alert("Técnico asignado correctamente");
-                        } catch (err) {
-                          alert(err.response?.data?.error || "Error al asignar");
-                        }
-                      }
+                    onClick={() => {
+                      setAssigningTicketId(selectedTicket.id);
+                      setShowAssignModal(true);
+                      setTechSearch("");
                     }}
                     className="flex-1 border border-[#1a237e] text-[#1a237e] font-semibold py-2.5 rounded-xl text-sm"
                   >
@@ -859,6 +855,123 @@ export default function AdminDashboard() {
                       Aprobar Cierre
                     </button>
                   </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal asignar técnico */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="font-bold text-gray-800">Asignar Técnico</h3>
+              <button onClick={() => setShowAssignModal(false)}>
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4">
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  value={techSearch}
+                  onChange={(e) => setTechSearch(e.target.value)}
+                  placeholder="Buscar por código (ESP001) o nombre..."
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a237e]"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {techs
+                  .filter(
+                    (t) =>
+                      t.is_active &&
+                      (techSearch === "" ||
+                        t.access_code
+                          ?.toLowerCase()
+                          .includes(techSearch.toLowerCase()) ||
+                        t.first_name
+                          ?.toLowerCase()
+                          .includes(techSearch.toLowerCase()) ||
+                        t.last_name_pat
+                          ?.toLowerCase()
+                          .includes(techSearch.toLowerCase())),
+                  )
+                  .map((tech) => (
+                    <button
+                      key={tech.id}
+                      onClick={async () => {
+                        try {
+                          await api.patch(
+                            `/admin/tickets/${assigningTicketId}/assign`,
+                            { esp_id: tech.id },
+                          );
+                          await fetchAll();
+                          fetchHistory(assigningTicketId);
+                          setShowAssignModal(false);
+                          setTechSearch("");
+                        } catch (err) {
+                          alert(
+                            err.response?.data?.error || "Error al asignar",
+                          );
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#1a237e] hover:bg-blue-50 transition text-left"
+                    >
+                      <div className="w-10 h-10 bg-[#1a237e] rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">
+                          {tech.first_name[0]}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-800">
+                            {tech.first_name} {tech.last_name_pat}
+                          </p>
+                          <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded">
+                            {tech.access_code}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span
+                            className={`text-xs font-semibold ${tech.is_wip_locked ? "text-orange-500" : "text-green-600"}`}
+                          >
+                            {tech.is_wip_locked ? "● En tarea" : "● Disponible"}
+                          </span>
+                          {tech.specialties?.map((s) => (
+                            <span
+                              key={s.specialty_id}
+                              className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full"
+                            >
+                              {s.specialty?.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </button>
+                  ))}
+                {techs.filter(
+                  (t) =>
+                    t.is_active &&
+                    (techSearch === "" ||
+                      t.access_code
+                        ?.toLowerCase()
+                        .includes(techSearch.toLowerCase()) ||
+                      t.first_name
+                        ?.toLowerCase()
+                        .includes(techSearch.toLowerCase()) ||
+                      t.last_name_pat
+                        ?.toLowerCase()
+                        .includes(techSearch.toLowerCase())),
+                ).length === 0 && (
+                  <p className="text-center text-gray-400 text-sm py-6">
+                    No se encontraron técnicos
+                  </p>
                 )}
               </div>
             </div>

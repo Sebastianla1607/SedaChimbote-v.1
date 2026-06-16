@@ -27,7 +27,7 @@ export default function TicketInProgress() {
 
   useEffect(() => {
     fetchTicket()
-    const interval = setInterval(fetchTicket, 10000)
+    const interval = setInterval(fetchTicket, 5000)
     return () => clearInterval(interval)
   }, [id])
 
