@@ -93,15 +93,15 @@ async function main() {
     ]
   })
 
-  // Jefe inicial
-  const password_hash = await bcrypt.hash('Jefe2024!', 10)
+  // Jefe
+  const jefHash = await bcrypt.hash('Jefe2024!', 10)
   await prisma.user.upsert({
     where: { access_code: 'JEF001' },
     update: {},
     create: {
       role: 'JEF_',
       access_code: 'JEF001',
-      password_hash,
+      password_hash: jefHash,
       first_name: 'Roberto',
       last_name_pat: 'Sánchez',
       last_name_mat: 'Torres',
@@ -109,8 +109,98 @@ async function main() {
     }
   })
 
+  // Admin
+  const admHash = await bcrypt.hash('SedaADM0012024!', 10)
+  await prisma.user.upsert({
+    where: { access_code: 'ADM001' },
+    update: {},
+    create: {
+      role: 'ADM_',
+      access_code: 'ADM001',
+      password_hash: admHash,
+      first_name: 'Carmen',
+      last_name_pat: 'Vargas',
+      last_name_mat: 'Ríos',
+      phone: '945678123'
+    }
+  })
+
+  // Técnico 1
+  const esp1Hash = await bcrypt.hash('SedaESP0012024!', 10)
+  const esp1 = await prisma.user.upsert({
+    where: { access_code: 'ESP001' },
+    update: {},
+    create: {
+      role: 'ESP_',
+      access_code: 'ESP001',
+      password_hash: esp1Hash,
+      first_name: 'Miguel',
+      last_name_pat: 'Torres',
+      last_name_mat: 'Castro',
+      phone: '934567812'
+    }
+  })
+
+  // Técnico 2
+  const esp2Hash = await bcrypt.hash('SedaESP0022024!', 10)
+  const esp2 = await prisma.user.upsert({
+    where: { access_code: 'ESP002' },
+    update: {},
+    create: {
+      role: 'ESP_',
+      access_code: 'ESP002',
+      password_hash: esp2Hash,
+      first_name: 'Pedro',
+      last_name_pat: 'Ramírez',
+      last_name_mat: 'Silva',
+      phone: '923456781'
+    }
+  })
+
+  // Asignar especialidades a técnicos
+  const specialties = await prisma.specialty.findMany()
+  const fugasId = specialties.find(s => s.name === 'Fugas')?.id
+  const medidoresId = specialties.find(s => s.name === 'Medidores')?.id
+  const presionId = specialties.find(s => s.name === 'Presión baja')?.id
+  const calidadId = specialties.find(s => s.name === 'Calidad del agua')?.id
+
+  await prisma.userSpecialty.createMany({
+    skipDuplicates: true,
+    data: [
+      { user_id: esp1.id, specialty_id: fugasId },
+      { user_id: esp1.id, specialty_id: medidoresId },
+      { user_id: esp1.id, specialty_id: presionId },
+      { user_id: esp2.id, specialty_id: presionId },
+      { user_id: esp2.id, specialty_id: calidadId },
+    ]
+  })
+
+  // Cliente Juan
+  const customer = await prisma.customer.findUnique({ where: { supply_code: 'SUM-001' } })
+  if (customer) {
+    const jaunHash = await bcrypt.hash('123456', 10)
+    await prisma.user.upsert({
+      where: { email: 'juan@example.com' },
+      update: {},
+      create: {
+        role: 'CLI_',
+        email: 'juan@example.com',
+        password_hash: jaunHash,
+        first_name: 'Juan',
+        last_name_pat: 'Pérez',
+        last_name_mat: 'López',
+        phone: '987654321',
+        customer_id: customer.id
+      }
+    })
+  }
+
   console.log('✅ Datos sembrados correctamente')
-  console.log('👤 Jefe: JEF001 / Jefe2024!')
+  console.log('👤 Jefe:  JEF001 / Jefe2024!')
+  console.log('👤 Admin: ADM001 / SedaADM0012024!')
+  console.log('👤 ESP1:  ESP001 / SedaESP0012024!')
+  console.log('👤 ESP2:  ESP002 / SedaESP0022024!')
+  console.log('👤 Cliente: juan@example.com / 123456')
 }
 
 main()
