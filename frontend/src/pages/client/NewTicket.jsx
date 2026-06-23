@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { ArrowLeft, Camera, X, Loader, CheckCircle, AlertTriangle, RefreshCw, XCircle } from 'lucide-react'
+import { generateTicketPDF } from '../../services/pdfGenerator'
+import { Download } from 'lucide-react'
 
 const PHASES = [
   'Analizando descripción...',
@@ -145,6 +147,21 @@ export default function NewTicket() {
                 <p className="text-sm font-semibold text-gray-800">{result.ticket?.priority}</p>
               </div>
             </div>
+
+            {/* Botón descargar PDF */}
+            <button
+              onClick={() => generateTicketPDF({
+                ...result.ticket,
+                description: form.description,
+                reference_point: form.reference_point,
+                address: 'Ver en sistema',
+                origin: 'CIUDADANO'
+              })}
+              className="w-full border border-[#1a237e] text-[#1a237e] font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 mb-3"
+            >
+              <Download className="w-4 h-4" />
+              Descargar comprobante PDF
+            </button>
 
             <button
               onClick={() => navigate('/dashboard')}

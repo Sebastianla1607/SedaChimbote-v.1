@@ -24,10 +24,23 @@ PRIORIDADES:
 - ALTA: afecta severamente el servicio
 - EXTREMA: emergencia inmediata (inundación, rotura de tubería principal)
 
+CRITERIOS PARA ASIGNAR PRIORIDAD (basados en las palabras clave del reclamo):
+- EXTREMA: si menciona "inundación", "rotura de tubería principal", "fuga masiva", "agua en la calle", "daño estructural", "desabastecimiento total en zona".
+- ALTA: si menciona "sin agua", "presión muy baja", "agua sucia", "olor fuerte", "fuga que moja paredes", "medidor roto".
+- MEDIA: si menciona "baja presión", "fuga pequeña", "ruido en tuberías", "medidor con error", "agua turbia".
+- BAJA: si menciona "goteo", "fuga mínima", "consulta de mantenimiento", "problema estético".
+
 DIFICULTAD DE LA TAREA:
 - SIMPLE: trabajo de menos de 1 hora
 - MODERADO: trabajo de 1 a 3 horas
 - COMPLEJO: trabajo de más de 3 horas o requiere equipo especial
+
+CRITERIOS PARA ASIGNAR DIFICULTAD (según la complejidad técnica descrita):
+- COMPLEJO: si requiere "excavación", "reemplazo de tubería", "rotura de red", "equipo especial", "soldadura", o se estima >3 horas.
+- MODERADO: si requiere "reparación de fuga en tubería secundaria", "cambio de medidor", "ajuste de presión", "limpieza de filtros", o se estima 1-3 horas.
+- SIMPLE: si requiere "ajuste de válvula", "apriete de conexión", "inspección", "lectura", o se estima <1 hora.
+
+Nota: prioridad y dificultad pueden no coincidir; asigna cada una según sus propios criterios.
 
 Descripción del reclamo: "${description}"
 

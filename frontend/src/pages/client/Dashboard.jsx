@@ -8,6 +8,8 @@ import MobileHeader from '../../components/layout/MobileHeader'
 import NotificationPanel from '../../components/ui/NotificationPanel'
 import EmptyState from '../../components/ui/EmptyState'
 import { PriorityBadge, StatusBadge } from '../../components/ui/StatusBadge'
+import { generateTicketPDF } from '../../services/pdfGenerator'
+import { Download } from 'lucide-react'
 
 export default function ClientDashboard() {
   const { user } = useAuth()
@@ -205,15 +207,24 @@ export default function ClientDashboard() {
         </button>
       )}
 
-      {/* Modal detalle ticket */}
+      {/* Modal detalle ticket - MODIFICADO CON BOTÓN PDF */}
       {selectedTicket && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className="bg-white rounded-t-2xl w-full max-h-[80vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800">Detalle del Reclamo</h3>
-              <button onClick={() => setSelectedTicket(null)}>
-                <XCircle className="w-5 h-5 text-gray-400" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => generateTicketPDF(selectedTicket)}
+                  className="flex items-center gap-1 bg-[#1a237e] text-white text-xs px-3 py-1.5 rounded-lg"
+                >
+                  <Download className="w-3 h-3" />
+                  PDF
+                </button>
+                <button onClick={() => setSelectedTicket(null)}>
+                  <XCircle className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
