@@ -28,5 +28,37 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+// ## Función para subir imágenes al servidor
+export const uploadImages = async (files) => {
+  const formData = new FormData()
+  files.forEach(file => formData.append('images', file))
+
+  const token = localStorage.getItem('token')
+  const response = await fetch('http://localhost:3000/api/upload/multiple', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.error)
+  return data.urls
+}
+
+export const uploadSingleImage = async (file) => {
+  const formData = new FormData()
+  formData.append('image', file)
+
+  const token = localStorage.getItem('token')
+  const response = await fetch('http://localhost:3000/api/upload/single', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.error)
+  return data.url
+}
 
 export default api

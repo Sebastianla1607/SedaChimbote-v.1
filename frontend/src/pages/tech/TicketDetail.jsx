@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
 import { ArrowLeft, MapPin, Clock, AlertTriangle, CheckCircle, Camera, X, Loader } from 'lucide-react'
 import TechMap from '../../components/TechMap'
+import { uploadImages } from '../../services/api'
 
 const priorityConfig = {
   BAJA: { label: 'Prioridad Baja', color: 'bg-green-100 text-green-700' },

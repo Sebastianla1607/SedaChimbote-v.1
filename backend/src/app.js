@@ -3,7 +3,8 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const { generalLimiter, authLimiter, helmet } = require('./middlewares/security.middleware')
 const errorHandler = require('./middlewares/error.middleware')
-
+const path = require('path')
+const uploadRoutes = require('./routes/upload.routes')
 dotenv.config()
 
 const app = express()
@@ -30,6 +31,8 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/tech', techRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/specialties', specialtyRoutes)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+app.use('/api/upload', uploadRoutes)
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'Servidor SEDACHIMBOTE funcionando ✅' })
