@@ -184,7 +184,7 @@ const consultarDni = async (req, res) => {
     const axios = require('axios')
     const { data } = await axios.get(`https://api.apis.net.pe/v2/reniec/dni?numero=${dni}`, {
       headers: {
-        'Authorization': 'Bearer apis-token-9984.XgLLkBLdFRsPhXUx8Ky7GDmZ2NkVwrtE',
+        'Authorization': 'Bearer sk_16810.7IArNtqSTQ1lBq16CkM6J9d5gr5a2qty',
         'Accept': 'application/json'
       },
       timeout: 5000

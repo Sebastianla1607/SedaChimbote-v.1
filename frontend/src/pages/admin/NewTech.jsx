@@ -20,24 +20,16 @@ export default function NewTech() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    fetchSpecialties()
+    api.get('/specialties').then(({ data }) => setSpecialties(data.specialties))
   }, [])
 
-  const fetchSpecialties = async () => {
-    try {
-      const { data } = await api.get('/specialties')
-      setSpecialties(data.specialties)
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   const toggleSpecialty = (id) => {
-    if (form.specialties.includes(id)) {
-      setForm({ ...form, specialties: form.specialties.filter(s => s !== id) })
-    } else {
-      setForm({ ...form, specialties: [...form.specialties, id] })
-    }
+    setForm(prev => ({
+      ...prev,
+      specialties: prev.specialties.includes(id)
+        ? prev.specialties.filter(s => s !== id)
+        : [...prev.specialties, id]
+    }))
   }
 
   const handleSubmit = async (e) => {
@@ -47,11 +39,7 @@ export default function NewTech() {
     try {
       const { data } = await api.post('/users', {
         role: 'ESP_',
-        first_name: form.first_name,
-        last_name_pat: form.last_name_pat,
-        last_name_mat: form.last_name_mat,
-        phone: form.phone,
-        specialties: form.specialties
+        ...form
       })
       setCredentials(data.user)
     } catch (err) {
@@ -62,13 +50,13 @@ export default function NewTech() {
   }
 
   const copyCredentials = () => {
-    const text = `CREDENCIALES SEDACHIMBOTE\nCódigo: ${credentials.access_code}\nContraseña: ${credentials.temp_password}`
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(
+      `CREDENCIALES SEDACHIMBOTE\nCódigo: ${credentials.access_code}\nContraseña: ${credentials.temp_password}`
+    )
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Pantalla de credenciales generadas
   if (credentials) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
@@ -77,38 +65,28 @@ export default function NewTech() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-1">¡Técnico Creado!</h2>
-          <p className="text-gray-500 text-sm mb-6">Entrega estas credenciales al técnico de forma segura</p>
+          <p className="text-gray-500 text-sm mb-6">Entrega estas credenciales de forma segura</p>
 
-          <div className="bg-[#1a237e] rounded-xl p-5 mb-4 text-left">
-            <p className="text-blue-300 text-xs font-semibold mb-3 uppercase">Credenciales de Acceso</p>
-            <div className="space-y-3">
-              <div>
-                <p className="text-blue-300 text-xs mb-0.5">Nombre</p>
-                <p className="text-white font-semibold">{credentials.first_name}</p>
+          <div className="bg-[#1a237e] rounded-xl p-5 mb-4 text-left space-y-3">
+            <p className="text-blue-300 text-xs font-semibold uppercase">Credenciales de Acceso</p>
+            {[
+              { label: 'Nombre', value: credentials.first_name },
+              { label: 'Código', value: credentials.access_code },
+              { label: 'Contraseña Temporal', value: credentials.temp_password },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-blue-300 text-xs mb-0.5">{label}</p>
+                <p className="text-white font-bold font-mono">{value}</p>
               </div>
-              <div>
-                <p className="text-blue-300 text-xs mb-0.5">Código de Acceso</p>
-                <p className="text-white font-bold text-lg font-mono">{credentials.access_code}</p>
-              </div>
-              <div>
-                <p className="text-blue-300 text-xs mb-0.5">Contraseña Temporal</p>
-                <p className="text-white font-bold text-lg font-mono">{credentials.temp_password}</p>
-              </div>
-            </div>
+            ))}
           </div>
 
-          <button
-            onClick={copyCredentials}
-            className="w-full border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 mb-3 hover:bg-gray-50 transition"
-          >
+          <button onClick={copyCredentials} className="w-full border border-gray-300 text-gray-600 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 mb-3 hover:bg-gray-50 transition">
             {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
             {copied ? '¡Copiado!' : 'Copiar credenciales'}
           </button>
 
-          <button
-            onClick={() => navigate('/admin/dashboard')}
-            className="w-full bg-[#1a237e] text-white font-semibold py-2.5 rounded-xl text-sm"
-          >
+          <button onClick={() => navigate('/admin/dashboard')} className="btn-primary">
             Volver al Dashboard
           </button>
         </div>
@@ -118,8 +96,6 @@ export default function NewTech() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* Header */}
       <div className="bg-[#1a237e] px-6 py-4 flex items-center gap-4">
         <button onClick={() => navigate('/admin/dashboard')} className="text-white">
           <ArrowLeft className="w-5 h-5" />
@@ -133,72 +109,36 @@ export default function NewTech() {
 
       <div className="max-w-xl mx-auto px-6 py-8">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 text-sm mb-6">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert-error mb-6">{error}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Nombres <span className="text-red-400">*</span>
-              </label>
-              <input
-                value={form.first_name}
-                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                placeholder="Nombres del técnico"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a237e]"
-                required
-              />
+              <label className="label">Nombres <span className="text-red-400">*</span></label>
+              <input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                placeholder="Nombres del técnico" className="input-base" required />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Ap. Paterno <span className="text-red-400">*</span>
-                </label>
-                <input
-                  value={form.last_name_pat}
-                  onChange={(e) => setForm({ ...form, last_name_pat: e.target.value })}
-                  placeholder="Apellido paterno"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a237e]"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Ap. Materno <span className="text-red-400">*</span>
-                </label>
-                <input
-                  value={form.last_name_mat}
-                  onChange={(e) => setForm({ ...form, last_name_mat: e.target.value })}
-                  placeholder="Apellido materno"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a237e]"
-                  required
-                />
-              </div>
+              {[
+                { key: 'last_name_pat', label: 'Ap. Paterno', placeholder: 'Apellido paterno' },
+                { key: 'last_name_mat', label: 'Ap. Materno', placeholder: 'Apellido materno' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className="label">{label} <span className="text-red-400">*</span></label>
+                  <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    placeholder={placeholder} className="input-base" required />
+                </div>
+              ))}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Teléfono
-              </label>
-              <input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="999 999 999"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a237e]"
-              />
+              <label className="label">Teléfono</label>
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="999 999 999" className="input-base" />
             </div>
 
-            {/* Especialidades */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Especialidades
-              </label>
+              <label className="label mb-2">Especialidades</label>
               <div className="flex flex-wrap gap-2">
                 {specialties.map(s => (
                   <button
@@ -217,30 +157,19 @@ export default function NewTech() {
               </div>
             </div>
 
-            {/* Nota */}
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
               <p className="text-xs font-semibold text-blue-700 mb-1">Credenciales automáticas</p>
-              <p className="text-xs text-blue-600">El sistema generará automáticamente un código de acceso y contraseña temporal que deberás entregar al técnico.</p>
+              <p className="text-xs text-blue-600">El sistema generará código y contraseña temporal automáticamente.</p>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => navigate('/admin/dashboard')}
-                className="flex-1 border border-gray-300 text-gray-600 font-semibold py-3 rounded-xl text-sm hover:bg-gray-50 transition"
-              >
+              <button type="button" onClick={() => navigate('/admin/dashboard')} className="btn-secondary flex-1">
                 Cancelar
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-2 flex-grow bg-[#1a237e] hover:bg-[#283593] text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {loading ? <Loader className="w-4 h-4 animate-spin" /> : null}
-                {loading ? 'Creando...' : 'Crear Técnico'}
+              <button type="submit" disabled={loading} className="btn-primary flex-1">
+                {loading ? <Loader className="w-4 h-4 animate-spin mx-auto" /> : 'Crear Técnico'}
               </button>
             </div>
-
           </form>
         </div>
       </div>
