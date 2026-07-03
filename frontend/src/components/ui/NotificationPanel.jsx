@@ -1,42 +1,52 @@
-import { X } from 'lucide-react'
-import api from '../../services/api'
+import { X, Bell, Check } from 'lucide-react'
 
 export default function NotificationPanel({ notifications, onClose, onMarkAllRead }) {
   return (
-    <div className="absolute top-24 right-4 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-        <span className="font-semibold text-gray-800 text-sm">Notificaciones</span>
-        <button onClick={onClose}>
-          <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+    <div className="absolute top-24 right-4 w-80 bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-800/80 z-50 overflow-hidden animate-fade-in-up">
+      <div className="px-4 py-3.5 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/40">
+        <div className="flex items-center gap-2">
+          <Bell className="w-4 h-4 text-blue-400" />
+          <span className="font-extrabold text-slate-200 text-xs uppercase tracking-wider">Notificaciones</span>
+        </div>
+        <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="max-h-64 overflow-y-auto">
+      <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/60">
         {notifications.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-6">Sin notificaciones</p>
+          <div className="flex flex-col items-center justify-center py-10 px-4">
+            <Bell className="w-8 h-8 text-slate-600 mb-2 opacity-50" />
+            <p className="text-center text-slate-500 text-xs font-semibold uppercase tracking-wider">Sin notificaciones</p>
+          </div>
         ) : (
           notifications.map(n => (
             <div
               key={n.id}
-              className={`px-4 py-3 border-b border-gray-50 ${!n.is_read ? 'bg-blue-50' : ''}`}
+              className={`px-4 py-3.5 hover:bg-slate-800/20 transition ${!n.is_read ? 'bg-blue-600/5' : ''}`}
             >
-              <p className="text-sm text-gray-700">{n.message}</p>
-              {n.ticket?.code && (
-                <span className="text-xs font-mono text-[#1a237e]">#{n.ticket.code}</span>
-              )}
-              <p className="text-xs text-gray-400 mt-1">
-                {new Date(n.created_at).toLocaleDateString('es-PE')}
-              </p>
+              <p className="text-xs text-slate-400 leading-relaxed font-medium">{n.message}</p>
+              <div className="flex items-center justify-between mt-2">
+                {n.ticket?.code && (
+                  <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                    #{n.ticket.code}
+                  </span>
+                )}
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {new Date(n.created_at).toLocaleDateString('es-PE')}
+                </p>
+              </div>
             </div>
           ))
         )}
       </div>
 
-      <div className="px-4 py-2 border-t border-gray-100">
+      <div className="px-4 py-2.5 border-t border-slate-800/80 bg-slate-950/40 text-center">
         <button
           onClick={onMarkAllRead}
-          className="text-xs text-[#1a237e] font-semibold hover:underline"
+          className="text-[10px] text-blue-400 font-bold uppercase tracking-wider hover:text-blue-300 transition flex items-center justify-center gap-1.5 w-full py-1 hover:bg-blue-500/5 rounded-lg"
         >
+          <Check className="w-3.5 h-3.5" />
           Marcar todas como leídas
         </button>
       </div>

@@ -67,12 +67,12 @@ export default function TechMap({ clientLat, clientLng, clientAddress }) {
   return (
     <div className="space-y-2">
       {geoError && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-700">
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl px-4 py-3 text-xs font-semibold">
           ⚠️ {geoError} — solo se muestra la ubicación del cliente
         </div>
       )}
 
-      <div className="w-full h-64 rounded-xl overflow-hidden border border-gray-200">
+      <div className="w-full h-64 rounded-xl overflow-hidden border border-slate-800">
         <MapContainer
           center={center}
           zoom={15}
@@ -108,9 +108,9 @@ export default function TechMap({ clientLat, clientLng, clientAddress }) {
           {techPos && clientPos && (
             <Polyline
               positions={[techPos, clientPos]}
-              color="#1a237e"
-              weight={3}
-              dashArray="8 4"
+              color="#3b82f6"
+              weight={3.5}
+              dashArray="8 6"
             />
           )}
 
@@ -121,17 +121,17 @@ export default function TechMap({ clientLat, clientLng, clientAddress }) {
       {/* Leyenda */}
       <div className="flex items-center gap-4 px-1">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span className="text-xs text-gray-500">Destino</span>
+          <div className="w-3 h-3 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
+          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Destino</span>
         </div>
         {techPos && (
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-[#1a237e] rounded-full"></div>
-            <span className="text-xs text-gray-500">Tu ubicación</span>
+            <div className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tu ubicación</span>
           </div>
         )}
         {!techPos && !geoError && (
-          <span className="text-xs text-gray-400">Obteniendo tu ubicación...</span>
+          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider animate-pulse">Obteniendo tu ubicación...</span>
         )}
       </div>
     </div>

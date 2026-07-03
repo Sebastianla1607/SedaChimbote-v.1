@@ -4,13 +4,8 @@ import api from '../../services/api'
 import { ArrowLeft, MapPin, Clock, AlertTriangle, CheckCircle, Camera, X, Loader } from 'lucide-react'
 import TechMap from '../../components/TechMap'
 import { uploadImages } from '../../services/api'
-
-const priorityConfig = {
-  BAJA: { label: 'Prioridad Baja', color: 'bg-green-100 text-green-700' },
-  MEDIA: { label: 'Prioridad Media', color: 'bg-yellow-100 text-yellow-700' },
-  ALTA: { label: 'Prioridad Alta', color: 'bg-orange-100 text-orange-700' },
-  EXTREMA: { label: 'Emergencia', color: 'bg-red-100 text-red-700' },
-}
+import Sidebar from '../../components/layout/Sidebar'
+import { PriorityBadge } from '../../components/ui/StatusBadge'
 
 export default function TicketDetail() {
   const { id } = useParams()
@@ -87,354 +82,369 @@ export default function TicketDetail() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+    <div className="flex min-h-screen bg-slate-950 relative overflow-hidden">
+      {/* Decorative Orbits */}
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Header con botón de volver bloqueado si está en EN_CAMINO o EJECUCION_ACTIVA */}
-      <div className="bg-[#1a237e] px-4 pt-10 pb-4 flex items-center gap-3">
-        <button
-          onClick={() => {
-            if (['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(ticket.status)) {
-              alert('No puedes salir mientras tienes una tarea activa')
-              return
-            }
-            navigate('/tech/dashboard')
-          }}
-          className={`${['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(ticket.status) ? 'text-blue-400 cursor-not-allowed' : 'text-white'}`}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-white font-bold">Detalle de Ticket</h1>
-          <p className="text-blue-300 text-xs font-mono">{ticket.code}</p>
-        </div>
-        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${priorityConfig[ticket.priority]?.color}`}>
-          {priorityConfig[ticket.priority]?.label}
-        </span>
-      </div>
+      <Sidebar />
+      <div className="flex-1 md:pl-64 flex flex-col w-full z-10">
 
-      {ticket.priority === 'EXTREMA' && (
-        <div className="bg-red-500 px-4 py-2 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
-          <p className="text-white text-xs font-bold">TIENES UNA TAREA EN CURSO — ATENCIÓN URGENTE</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="mx-4 mt-3 bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-32 space-y-4">
-
-        {/* Descripción */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Descripción del Cliente</p>
-          <p className="text-sm text-gray-700 italic">"{ticket.description}"</p>
-          {ticket.reference_point && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500 font-semibold mb-1">PUNTO DE REFERENCIA</p>
-              <p className="text-sm text-gray-600">{ticket.reference_point}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Análisis IA */}
-        {ticket.ai_report && (
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">IA</span>
-              </div>
-              <p className="text-xs font-semibold text-blue-700">Análisis de Gemini IA</p>
-            </div>
-            <p className="text-sm text-blue-800">{ticket.ai_report}</p>
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              {ticket.ai_category && (
-                <div className="bg-white rounded-lg p-2">
-                  <p className="text-xs text-gray-500">Categoría</p>
-                  <p className="text-sm font-semibold text-gray-800">{ticket.ai_category}</p>
-                </div>
-              )}
-              {ticket.ai_difficulty && (
-                <div className="bg-white rounded-lg p-2">
-                  <p className="text-xs text-gray-500">Dificultad</p>
-                  <p className="text-sm font-semibold text-gray-800">{ticket.ai_difficulty}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Ubicación con mapa */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ubicación</p>
-          <p className="text-sm text-gray-700 mb-3 flex items-center gap-1">
-            <MapPin className="w-4 h-4 text-[#1a237e]" />
-            {ticket.address}
-          </p>
-
-          <TechMap
-            clientLat={ticket.latitude}
-            clientLng={ticket.longitude}
-            clientAddress={ticket.address}
-          />
-
+        {/* Header con botón de volver bloqueado si está en EN_CAMINO o EJECUCION_ACTIVA */}
+        <div className="bg-slate-900/40 border-b border-slate-900/60 px-4 pt-10 pb-4 flex items-center gap-3 md:px-8 md:py-6 sticky top-0 z-40 backdrop-blur-md">
           <button
-            onClick={openMaps}
-            className="w-full bg-[#1a237e] text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 mt-3"
+            onClick={() => {
+              if (['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(ticket.status)) {
+                alert('No puedes salir mientras tienes una tarea activa')
+                return
+              }
+              navigate('/tech/dashboard')
+            }}
+            className={`${['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(ticket.status) ? 'text-blue-500/50 cursor-not-allowed' : 'text-white hover:text-slate-200'}`}
           >
-            <MapPin className="w-4 h-4" />
-            Abrir navegación en Google Maps
+            <ArrowLeft className="w-5 h-5" />
           </button>
-        </div>
-
-        {/* SLA */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-500 uppercase">Fecha límite</p>
+          <div className="flex-1">
+            <h1 className="text-white font-extrabold text-lg">Detalle de Ticket</h1>
+            <p className="text-blue-400 text-xs font-mono font-bold">#{ticket.code}</p>
           </div>
-          <p className="text-sm font-semibold text-gray-800">
-            {new Date(ticket.due_date).toLocaleDateString('es-PE')}
-          </p>
+          <PriorityBadge priority={ticket.priority} />
         </div>
 
-        {/* ✅ Bloque informativo de espera (sin toggle manual) */}
-        {ticket.status === 'ASIGNADO' && techAccepted && !clientConfirmed && ticket.origin === 'CIUDADANO' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-yellow-600" />
-              <p className="text-yellow-700 font-semibold text-sm">Esperando confirmación del cliente</p>
-            </div>
-            <p className="text-yellow-600 text-xs">
-              El cliente ha sido notificado. Espera su respuesta para iniciar el viaje.
-            </p>
+        {ticket.priority === 'EXTREMA' && (
+          <div className="bg-rose-600 px-4 py-2.5 flex items-center gap-2 animate-pulse shadow-lg z-30">
+            <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
+            <p className="text-white text-xs font-black uppercase tracking-wider">TIENES UNA TAREA EN CURSO — ATENCIÓN URGENTE</p>
           </div>
         )}
 
-        {/* Formulario cliente ausente */}
-        {showAbsentForm && (
-          <div className="bg-white rounded-xl border border-orange-200 p-4">
-            <p className="text-sm font-semibold text-gray-800 mb-3">Reportar Cliente Ausente</p>
-            <textarea
-              value={absentNote}
-              onChange={(e) => setAbsentNote(e.target.value)}
-              placeholder="Describe la situación..."
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none mb-3"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowAbsentForm(false)}
-                className="flex-1 border border-gray-300 text-gray-600 text-sm font-semibold py-2 rounded-lg"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleAction('absent', { description: absentNote })}
-                disabled={actionLoading}
-                className="flex-1 bg-orange-500 text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-50"
-              >
-                {actionLoading ? 'Enviando...' : 'Confirmar'}
-              </button>
-            </div>
+        {error && (
+          <div className="mx-4 mt-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl px-4 py-3.5 text-sm z-30 font-semibold">
+            {error}
           </div>
         )}
 
-        {/* Formulario reporte final */}
-        {showReportForm && (
-          <div className="bg-white rounded-xl border border-green-200 p-4">
-            <p className="text-sm font-semibold text-gray-800 mb-3">Reporte Final de Trabajo</p>
-            <textarea
-              value={reportDesc}
-              onChange={(e) => setReportDesc(e.target.value)}
-              placeholder="Describe el trabajo realizado..."
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none mb-3"
-            />
-            <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl py-4 cursor-pointer mb-3">
-              <Camera className="w-6 h-6 text-gray-400 mb-1" />
-              <span className="text-xs text-gray-500">Subir evidencia fotográfica</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const urls = Array.from(e.target.files).map(f => URL.createObjectURL(f))
-                  setReportImages([...reportImages, ...urls])
-                }}
-              />
-            </label>
-            {reportImages.length > 0 && (
-              <div className="flex gap-2 flex-wrap mb-3">
-                {reportImages.map((img, i) => (
-                  <div key={i} className="relative">
-                    <img src={img} className="w-16 h-16 object-cover rounded-lg" />
+        <div className="flex-1 overflow-y-auto px-4 py-6 pb-48 md:px-8 max-w-6xl mx-auto w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            
+            {/* Col 1: Información del Ticket, IA y Ubicación */}
+            <div className="space-y-4">
+
+              {/* Descripción */}
+              <div className="card">
+                <p className="label mb-2">Descripción del Cliente</p>
+                <p className="text-sm text-slate-100 italic font-semibold">"{ticket.description}"</p>
+                {ticket.reference_point && (
+                  <div className="mt-3.5 pt-3.5 border-t border-slate-800/80">
+                    <p className="label mb-1">Punto de Referencia</p>
+                    <p className="text-sm text-slate-300 font-semibold">{ticket.reference_point}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Análisis IA */}
+              {ticket.ai_report && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-blue-600/20 border border-blue-500/20 rounded-full flex items-center justify-center">
+                      <span className="text-blue-400 text-xs font-black">IA</span>
+                    </div>
+                    <p className="text-xs font-bold text-blue-400">Análisis de Gemini IA</p>
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed">{ticket.ai_report}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    {ticket.ai_category && (
+                      <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+                        <p className="label mb-0.5">Categoría</p>
+                        <p className="text-sm font-bold text-slate-200">{ticket.ai_category}</p>
+                      </div>
+                    )}
+                    {ticket.ai_difficulty && (
+                      <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+                        <p className="label mb-0.5">Dificultad</p>
+                        <p className="text-sm font-bold text-slate-200">{ticket.ai_difficulty}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Ubicación con mapa */}
+              <div className="card">
+                <p className="label mb-2">Ubicación</p>
+                <p className="text-sm text-slate-200 font-semibold mb-4 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-blue-400" />
+                  {ticket.address}
+                </p>
+
+                <TechMap
+                  clientLat={ticket.latitude}
+                  clientLng={ticket.longitude}
+                  clientAddress={ticket.address}
+                />
+
+                <button
+                  onClick={openMaps}
+                  className="btn-primary mt-4"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Abrir navegación en Google Maps
+                </button>
+              </div>
+
+            </div>
+
+            {/* Col 2: Estado, Acciones e Informes */}
+            <div className="space-y-4">
+              {/* SLA */}
+              <div className="card flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <p className="label mb-0">Fecha límite</p>
+                </div>
+                <p className="text-sm font-bold text-slate-100">
+                  {new Date(ticket.due_date).toLocaleDateString('es-PE')}
+                </p>
+              </div>
+
+              {/* ✅ Bloque informativo de espera (sin toggle manual) */}
+              {ticket.status === 'ASIGNADO' && techAccepted && !clientConfirmed && ticket.origin === 'CIUDADANO' && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-amber-400 animate-spin" />
+                    <p className="text-amber-400 font-bold text-sm">Esperando confirmación del cliente</p>
+                  </div>
+                  <p className="text-slate-300 text-xs">
+                    El cliente ha sido notificado. Espera su respuesta para iniciar el viaje.
+                  </p>
+                </div>
+              )}
+
+              {/* Formulario cliente ausente */}
+              {showAbsentForm && (
+                <div className="card border-orange-500/30">
+                  <p className="text-sm font-bold text-slate-100 mb-3">Reportar Cliente Ausente</p>
+                  <textarea
+                    value={absentNote}
+                    onChange={(e) => setAbsentNote(e.target.value)}
+                    placeholder="Describe la situación..."
+                    rows={3}
+                    className="input-base mb-3 resize-none"
+                  />
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => setReportImages(reportImages.filter((_, idx) => idx !== i))}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center"
+                      onClick={() => setShowAbsentForm(false)}
+                      className="flex-1 btn-secondary"
                     >
-                      <X className="w-2.5 h-2.5" />
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => handleAction('absent', { description: absentNote })}
+                      disabled={actionLoading}
+                      className="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition active:scale-[0.98]"
+                    >
+                      {actionLoading ? 'Enviando...' : 'Confirmar'}
                     </button>
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowReportForm(false)}
-                className="flex-1 border border-gray-300 text-gray-600 text-sm font-semibold py-2 rounded-lg"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleAction('report', {
-                  description: reportDesc,
-                  image_urls: reportImages.length > 0 ? reportImages : ['https://example.com/evidencia.jpg']
-                })}
-                disabled={actionLoading || !reportDesc}
-                className="flex-1 bg-green-600 text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-50"
-              >
-                {actionLoading ? 'Enviando...' : 'Enviar Reporte'}
-              </button>
+                </div>
+              )}
+
+              {/* Formulario reporte final */}
+              {showReportForm && (
+                <div className="card border-emerald-500/30">
+                  <p className="text-sm font-bold text-slate-100 mb-3">Reporte Final de Trabajo</p>
+                  <textarea
+                    value={reportDesc}
+                    onChange={(e) => setReportDesc(e.target.value)}
+                    placeholder="Describe el trabajo realizado..."
+                    rows={3}
+                    className="input-base mb-3 resize-none"
+                  />
+                  <label className="border-2 border-dashed border-slate-700 rounded-2xl py-4 cursor-pointer mb-3 bg-slate-950/40 hover:bg-slate-950/80 transition flex flex-col items-center justify-center">
+                    <Camera className="w-6 h-6 text-slate-500 mb-1" />
+                    <span className="text-xs text-slate-400">Subir evidencia fotográfica</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const urls = Array.from(e.target.files).map(f => URL.createObjectURL(f))
+                        setReportImages([...reportImages, ...urls])
+                      }}
+                    />
+                  </label>
+                  {reportImages.length > 0 && (
+                    <div className="flex gap-2 flex-wrap mb-3">
+                      {reportImages.map((img, i) => (
+                        <div key={i} className="relative">
+                          <img src={img} className="w-16 h-16 object-cover rounded-lg" />
+                          <button
+                            onClick={() => setReportImages(reportImages.filter((_, idx) => idx !== i))}
+                            className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center shadow-md"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowReportForm(false)}
+                      className="flex-1 btn-secondary"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => handleAction('report', {
+                        description: reportDesc,
+                        image_urls: reportImages.length > 0 ? reportImages : ['https://example.com/evidencia.jpg']
+                      })}
+                      disabled={actionLoading || !reportDesc}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition active:scale-[0.98]"
+                    >
+                      {actionLoading ? 'Enviando...' : 'Enviar Reporte'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
-        )}
+        </div>
 
-      </div>
+        {/* ✅ NUEVA SECCIÓN DE BOTONES CON DIFERENCIACIÓN POR ORIGEN */}
+        <div className="md:left-[calc(50%+8rem)] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-slate-900/90 border-t border-slate-800/80 px-4 py-4 space-y-2 z-40 backdrop-blur-md">
 
-      {/* ✅ NUEVA SECCIÓN DE BOTONES CON DIFERENCIACIÓN POR ORIGEN */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-4 space-y-2">
+          {/* ASIGNADO — antes de aceptar */}
+          {ticket.status === 'ASIGNADO' && !techAccepted && (
+            <button
+              onClick={() => handleAction('start')}
+              disabled={actionLoading}
+              className="w-full btn-primary"
+            >
+              {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Aceptar e Iniciar Tarea
+            </button>
+          )}
 
-        {/* ASIGNADO — antes de aceptar */}
-        {ticket.status === 'ASIGNADO' && !techAccepted && (
-          <button
-            onClick={() => handleAction('start')}
-            disabled={actionLoading}
-            className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-            Aceptar e Iniciar Tarea
-          </button>
-        )}
+          {/* ASIGNADO — ticket CIUDADANO esperando cliente */}
+          {ticket.status === 'ASIGNADO' && techAccepted && ticket.origin === 'CIUDADANO' && (
+            <button
+              onClick={() => handleAction('go')}
+              disabled={actionLoading || !clientConfirmed}
+              className="w-full bg-emerald-650 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 border border-emerald-500/20 active:scale-[0.98] transition"
+            >
+              {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+              {clientConfirmed ? 'Yendo a la vivienda 🚗' : 'Esperando confirmación del cliente...'}
+            </button>
+          )}
 
-        {/* ASIGNADO — ticket CIUDADANO esperando cliente */}
-        {ticket.status === 'ASIGNADO' && techAccepted && ticket.origin === 'CIUDADANO' && (
-          <button
-            onClick={() => handleAction('go')}
-            disabled={actionLoading || !clientConfirmed}
-            className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            {clientConfirmed ? 'Yendo a la vivienda 🚗' : 'Esperando confirmación del cliente...'}
-          </button>
-        )}
+          {/* EN_CAMINO — ticket CIUDADANO (antes de llegar) */}
+          {ticket.status === 'EN_CAMINO' && ticket.origin === 'CIUDADANO' && !techArrived && (
+            <>
+              <button
+                onClick={() => handleAction('arrived')}
+                disabled={actionLoading}
+                className="w-full btn-primary"
+              >
+                {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                Estoy Afuera de la Vivienda
+              </button>
+              <button
+                onClick={() => setShowAbsentForm(true)}
+                className="w-full btn-secondary text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
+              >
+                Reportar Visita Fallida / Ausente
+              </button>
+            </>
+          )}
 
-        {/* EN_CAMINO — ticket CIUDADANO (antes de llegar) */}
-        {ticket.status === 'EN_CAMINO' && ticket.origin === 'CIUDADANO' && !techArrived && (
-          <>
+          {/* EN_CAMINO — ticket CIUDADANO después de llegar */}
+          {ticket.status === 'EN_CAMINO' && ticket.origin === 'CIUDADANO' && techArrived && (
+            <>
+              <button
+                onClick={() => handleAction('execute')}
+                disabled={actionLoading}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition"
+              >
+                {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Cliente Abrió la Puerta
+              </button>
+              <button
+                onClick={() => setShowAbsentForm(true)}
+                className="w-full btn-secondary text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
+              >
+                Cliente No Abrió / Ausente
+              </button>
+            </>
+          )}
+
+          {/* EN_CAMINO — ticket INTERNO antes de llegar */}
+          {ticket.status === 'EN_CAMINO' && ticket.origin === 'INTERNO' && !techArrived && (
             <button
               onClick={() => handleAction('arrived')}
               disabled={actionLoading}
-              className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full btn-primary"
             >
               {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-              Estoy Afuera de la Vivienda
+              Llegué a la Ubicación
             </button>
-            <button
-              onClick={() => setShowAbsentForm(true)}
-              className="w-full border border-orange-400 text-orange-500 font-semibold py-2.5 rounded-xl text-sm"
-            >
-              Reportar Visita Fallida / Ausente
-            </button>
-          </>
-        )}
+          )}
 
-        {/* EN_CAMINO — ticket CIUDADANO después de llegar */}
-        {ticket.status === 'EN_CAMINO' && ticket.origin === 'CIUDADANO' && techArrived && (
-          <>
+          {/* EN_CAMINO — ticket INTERNO después de llegar */}
+          {ticket.status === 'EN_CAMINO' && ticket.origin === 'INTERNO' && techArrived && (
             <button
               onClick={() => handleAction('execute')}
               disabled={actionLoading}
-              className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition"
             >
               {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              Cliente Abrió la Puerta
+              Iniciar Trabajo
             </button>
-            <button
-              onClick={() => setShowAbsentForm(true)}
-              className="w-full border border-orange-400 text-orange-500 font-semibold py-2.5 rounded-xl text-sm"
-            >
-              Cliente No Abrió / Ausente
-            </button>
-          </>
-        )}
+          )}
 
-        {/* EN_CAMINO — ticket INTERNO antes de llegar */}
-        {ticket.status === 'EN_CAMINO' && ticket.origin === 'INTERNO' && !techArrived && (
-          <button
-            onClick={() => handleAction('arrived')}
-            disabled={actionLoading}
-            className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            Llegué a la Ubicación
-          </button>
-        )}
+          {/* EJECUCION_ACTIVA */}
+          {ticket.status === 'EJECUCION_ACTIVA' && (
+            <div className="space-y-2">
+              {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO' && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl p-3">
+                  <p className="text-amber-400 text-sm text-center">⏳ Esperando conformidad del cliente...</p>
+                </div>
+              )}
+              <button
+                onClick={() => setShowReportForm(true)}
+                disabled={!ticket.is_client_conformed && ticket.origin === 'CIUDADANO'}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition"
+              >
+                <Camera className="w-4 h-4" />
+                {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO'
+                  ? 'Esperando conformidad del cliente'
+                  : 'Subir Evidencia y Finalizar'}
+              </button>
+            </div>
+          )}
 
-        {/* EN_CAMINO — ticket INTERNO después de llegar */}
-        {ticket.status === 'EN_CAMINO' && ticket.origin === 'INTERNO' && techArrived && (
-          <button
-            onClick={() => handleAction('execute')}
-            disabled={actionLoading}
-            className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-            Iniciar Trabajo
-          </button>
-        )}
+          {/* PRE_CERRADO */}
+          {ticket.status === 'PRE_CERRADO' && (
+            <div className="bg-teal-500/10 border border-teal-500/20 rounded-xl p-4 text-center">
+              <CheckCircle className="w-8 h-8 text-teal-500 mx-auto mb-2" />
+              <p className="text-teal-400 font-semibold text-sm">Reporte enviado</p>
+              <p className="text-slate-400 text-xs mt-1">Esperando aprobación del administrador</p>
+            </div>
+          )}
 
-        {/* EJECUCION_ACTIVA */}
-        {ticket.status === 'EJECUCION_ACTIVA' && (
-          <div className="space-y-2">
-            {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO' && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
-                <p className="text-yellow-600 text-sm text-center">⏳ Esperando conformidad del cliente...</p>
-              </div>
-            )}
-            <button
-              onClick={() => setShowReportForm(true)}
-              disabled={!ticket.is_client_conformed && ticket.origin === 'CIUDADANO'}
-              className="w-full bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Camera className="w-4 h-4" />
-              {!ticket.is_client_conformed && ticket.origin === 'CIUDADANO'
-                ? 'Esperando conformidad del cliente'
-                : 'Subir Evidencia y Finalizar'}
-            </button>
-          </div>
-        )}
+          {/* OBSERVADO */}
+          {ticket.status === 'OBSERVADO' && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center">
+              <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-2 animate-bounce" />
+              <p className="text-amber-400 font-semibold text-sm">Ticket Observado</p>
+              <p className="text-slate-400 text-xs mt-1">El administrador revisará este caso</p>
+            </div>
+          )}
 
-        {/* PRE_CERRADO */}
-        {ticket.status === 'PRE_CERRADO' && (
-          <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 text-center">
-            <CheckCircle className="w-8 h-8 text-teal-500 mx-auto mb-2" />
-            <p className="text-teal-700 font-semibold text-sm">Reporte enviado</p>
-            <p className="text-teal-600 text-xs mt-1">Esperando aprobación del administrador</p>
-          </div>
-        )}
-
-        {/* OBSERVADO */}
-        {ticket.status === 'OBSERVADO' && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
-            <AlertTriangle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-            <p className="text-orange-700 font-semibold text-sm">Ticket Observado</p>
-            <p className="text-orange-600 text-xs mt-1">El administrador revisará este caso</p>
-          </div>
-        )}
-
+        </div>
       </div>
     </div>
   )

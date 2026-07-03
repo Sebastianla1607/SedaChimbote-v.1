@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -28,36 +28,30 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-// ## Función para subir imágenes al servidor
+
+// ## Función para subir múltiples imágenes al servidor usando la instancia central de Axios
 export const uploadImages = async (files) => {
   const formData = new FormData()
   files.forEach(file => formData.append('images', file))
 
-  const token = localStorage.getItem('token')
-  const response = await fetch('http://localhost:3000/api/upload/multiple', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}` },
-    body: formData
+  const { data } = await api.post('/upload/multiple', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
-
-  const data = await response.json()
-  if (!response.ok) throw new Error(data.error)
   return data.urls
 }
 
+// ## Función para subir una imagen al servidor usando la instancia central de Axios
 export const uploadSingleImage = async (file) => {
   const formData = new FormData()
   formData.append('image', file)
 
-  const token = localStorage.getItem('token')
-  const response = await fetch('http://localhost:3000/api/upload/single', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}` },
-    body: formData
+  const { data } = await api.post('/upload/single', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
-
-  const data = await response.json()
-  if (!response.ok) throw new Error(data.error)
   return data.url
 }
 

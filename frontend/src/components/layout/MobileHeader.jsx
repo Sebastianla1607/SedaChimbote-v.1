@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Bell } from 'lucide-react'
-import logo from '../../assets/logo_chimbote.png'
+import Logo from '../ui/Logo'
 
 export default function MobileHeader({
   title,
@@ -22,7 +22,7 @@ export default function MobileHeader({
   }
 
   return (
-    <div className="bg-[#1a237e] px-4 pt-10 pb-4">
+    <div className="md:hidden bg-slate-950/40 backdrop-blur-md border-b border-slate-900 px-4 pt-10 pb-4 sticky top-0 z-40">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-3">
           {showBack && (
@@ -34,12 +34,7 @@ export default function MobileHeader({
             </button>
           )}
           {showLogo && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <span className="text-[#1a237e] font-bold text-sm">S</span>
-              </div>
-              <span className="text-white font-bold text-sm tracking-wide">SEDACHIMBOTE</span>
-            </div>
+            <Logo size="sm" />
           )}
           {!showLogo && title && (
             <div>

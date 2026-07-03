@@ -4,6 +4,7 @@ import api from '../../services/api'
 import { ArrowLeft, Camera, X, Loader, CheckCircle, AlertTriangle, RefreshCw, XCircle } from 'lucide-react'
 import { generateTicketPDF } from '../../services/pdfGenerator'
 import { Download } from 'lucide-react'
+import Sidebar from '../../components/layout/Sidebar'
 
 const PHASES = [
   'Analizando descripción...',
@@ -89,32 +90,36 @@ export default function NewTicket() {
   // Pantalla de procesando
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a237e] flex flex-col items-center justify-center px-6">
-        <div className="w-20 h-20 bg-blue-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
-          <svg className="w-10 h-10 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+        {/* Decorative Orbits */}
+        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+        <div className="w-20 h-20 bg-blue-600/10 border border-blue-500/25 rounded-full flex items-center justify-center mb-6 animate-pulse z-10">
+          <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" />
           </svg>
         </div>
-        <h2 className="text-white text-xl font-bold mb-2">Gemini IA Analizando</h2>
-        <p className="text-blue-300 text-sm mb-8 text-center">Nuestro sistema inteligente está procesando tu reclamo</p>
+        <h2 className="text-white text-xl font-extrabold mb-2 z-10">Gemini IA Analizando</h2>
+        <p className="text-slate-400 text-sm mb-8 text-center max-w-xs z-10">Nuestro sistema inteligente está procesando y categorizando tu reclamo</p>
 
-        <div className="w-full max-w-xs space-y-3">
+        <div className="w-full max-w-xs space-y-3 z-10 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 shadow-2xl">
           {PHASES.map((p, i) => (
-            <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${i <= phase ? 'opacity-100' : 'opacity-30'}`}>
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${i < phase ? 'bg-green-400' : i === phase ? 'bg-blue-400 animate-pulse' : 'bg-blue-800'}`}>
+            <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${i <= phase ? 'opacity-100' : 'opacity-25'}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${i < phase ? 'bg-emerald-500' : i === phase ? 'bg-blue-500 animate-pulse' : 'bg-slate-800'}`}>
                 {i < phase ? (
                   <CheckCircle className="w-3 h-3 text-white" />
                 ) : (
-                  <div className="w-2 h-2 rounded-full bg-white" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 )}
               </div>
-              <span className={`text-sm ${i <= phase ? 'text-white' : 'text-blue-600'}`}>{p}</span>
+              <span className={`text-xs font-bold ${i <= phase ? 'text-slate-100' : 'text-slate-600'}`}>{p}</span>
             </div>
           ))}
         </div>
 
-        <div className="mt-8 bg-blue-800 rounded-xl px-4 py-2">
-          <p className="text-blue-300 text-xs font-mono">SEDA-AC-04</p>
+        <div className="mt-8 bg-slate-900/60 border border-slate-800 px-4 py-2 rounded-xl z-10">
+          <p className="text-slate-500 text-xs font-mono font-bold">SEDA-AC-04</p>
         </div>
       </div>
     )
@@ -124,27 +129,31 @@ export default function NewTicket() {
   if (result) {
     if (result.resultado === 'APROBADO') {
       return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
-          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8 w-full max-w-sm text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">¡Reclamo Registrado!</h2>
-            <p className="text-gray-500 text-sm mb-6">{result.mensaje}</p>
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+          {/* Decorative Orbits */}
+          <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-            <div className="bg-[#1a237e] rounded-xl p-4 mb-6">
-              <p className="text-blue-300 text-xs font-semibold mb-1">CÓDIGO DE SEGUIMIENTO</p>
-              <p className="text-white font-bold text-lg font-mono">{result.ticket?.code}</p>
+          <div className="card text-center p-8 w-full max-w-sm z-10">
+            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h2 className="text-xl font-black text-slate-100 mb-2">¡Reclamo Registrado!</h2>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">{result.mensaje}</p>
+
+            <div className="bg-[#1a237e] rounded-2xl p-4 mb-6 shadow-inner">
+              <p className="text-blue-300 text-[10px] font-bold uppercase tracking-wider mb-1">CÓDIGO DE SEGUIMIENTO</p>
+              <p className="text-white font-black text-lg font-mono tracking-wider">{result.ticket?.code}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-6 text-left">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 font-semibold mb-1">CATEGORÍA</p>
-                <p className="text-sm font-semibold text-gray-800">{result.ticket?.ai_category || 'General'}</p>
+              <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">CATEGORÍA</p>
+                <p className="text-xs font-bold text-slate-200">{result.ticket?.ai_category || 'General'}</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 font-semibold mb-1">PRIORIDAD</p>
-                <p className="text-sm font-semibold text-gray-800">{result.ticket?.priority}</p>
+              <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">PRIORIDAD</p>
+                <p className="text-xs font-bold text-slate-200">{result.ticket?.priority}</p>
               </div>
             </div>
 
@@ -157,7 +166,7 @@ export default function NewTicket() {
                 address: 'Ver en sistema',
                 origin: 'CIUDADANO'
               })}
-              className="w-full border border-[#1a237e] text-[#1a237e] font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 mb-3"
+              className="w-full btn-secondary text-blue-400 border-blue-500/30 hover:bg-blue-500/10 mb-3 flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
               Descargar comprobante PDF
@@ -165,7 +174,7 @@ export default function NewTicket() {
 
             <button
               onClick={() => navigate('/dashboard')}
-              className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl"
+              className="w-full btn-primary"
             >
               Ver mis reclamos
             </button>
@@ -176,16 +185,20 @@ export default function NewTicket() {
 
     if (result.resultado === 'RECHAZADO') {
       return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
-          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8 w-full max-w-sm text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8 text-red-500" />
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+          {/* Decorative Orbits */}
+          <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+          <div className="card text-center p-8 w-full max-w-sm z-10">
+            <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-rose-500" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Reclamo No Procedente</h2>
-            <p className="text-gray-500 text-sm mb-6">{result.mensaje}</p>
+            <h2 className="text-xl font-black text-slate-100 mb-2">Reclamo No Procedente</h2>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">{result.mensaje}</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl"
+              className="w-full btn-primary"
             >
               Volver al inicio
             </button>
@@ -196,18 +209,22 @@ export default function NewTicket() {
 
     if (result.resultado === 'NECESITA_MAS_INFO') {
       return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
-          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8 w-full max-w-sm text-center">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-yellow-500" />
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+          {/* Decorative Orbits */}
+          <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+          <div className="card text-center p-8 w-full max-w-sm z-10">
+            <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Necesitamos más información</h2>
-            <p className="text-gray-500 text-sm mb-6">{result.mensaje}</p>
+            <h2 className="text-xl font-black text-slate-100 mb-2">Necesitamos más información</h2>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">{result.mensaje}</p>
             <button
               onClick={() => setResult(null)}
-              className="w-full bg-[#1a237e] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
+              className="w-full btn-primary flex items-center justify-center gap-2"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4 animate-spin-slow" />
               Agregar más detalles
             </button>
           </div>
@@ -218,61 +235,67 @@ export default function NewTicket() {
 
   // Formulario principal
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+    <div className="flex min-h-screen bg-slate-950 relative overflow-hidden">
+      {/* Decorative Orbits */}
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+      <Sidebar />
+      <div className="flex-1 md:pl-64 flex flex-col w-full z-10">
 
       {/* Header */}
-      <div className="bg-[#1a237e] px-4 pt-10 pb-4 flex items-center gap-3">
-        <button onClick={() => navigate('/dashboard')} className="text-white">
+      <div className="bg-slate-900/40 border-b border-slate-900/60 px-4 pt-10 pb-4 flex items-center gap-3 md:px-8 md:py-6">
+        <button onClick={() => navigate('/dashboard')} className="text-white hover:text-slate-200">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-white font-bold">Nuevo Reclamo</h1>
-          <p className="text-blue-300 text-xs">Describe el problema del servicio</p>
+          <h1 className="text-white font-extrabold text-lg">Nuevo Reclamo</h1>
+          <p className="text-slate-400 text-xs font-semibold">Describe el problema del servicio de agua o alcantarillado</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-grow overflow-y-auto px-4 py-6 space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 md:items-start md:px-8 max-w-5xl w-full mx-auto">
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 text-sm">
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl px-4 py-3.5 text-sm md:col-span-2 font-semibold">
             {error}
           </div>
         )}
 
         {/* Descripción */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Descripción del problema <span className="text-red-400">*</span>
+        <div className="card">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Descripción del problema <span className="text-rose-500">*</span>
           </label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Describe el problema con el mayor detalle posible para facilitar el análisis de la IA..."
             rows={4}
-            className="w-full text-sm text-gray-700 resize-none focus:outline-none"
+            className="w-full text-sm text-slate-100 bg-transparent resize-none focus:outline-none placeholder-slate-600"
           />
-          <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-            <span className="text-xs text-gray-400">Mínimo 10 caracteres</span>
-            <span className={`text-xs font-semibold ${form.description.length < 10 ? 'text-red-400' : 'text-green-500'}`}>
+          <div className="flex justify-between items-center mt-2.5 pt-2.5 border-t border-slate-800/80">
+            <span className="text-xs text-slate-500">Mínimo 10 caracteres</span>
+            <span className={`text-xs font-bold ${form.description.length < 10 ? 'text-rose-500' : 'text-emerald-500'}`}>
               {form.description.length} / 500
             </span>
           </div>
         </div>
 
         {/* Evidencia fotográfica */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Evidencia Visual <span className="text-gray-400">(Opcional)</span>
+        <div className="card">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
+            Evidencia Visual <span className="text-slate-500 font-normal">(Opcional)</span>
           </label>
 
           {images.length > 0 && (
-            <div className="flex gap-2 mb-3 flex-wrap">
+            <div className="flex gap-2.5 mb-3 flex-wrap">
               {images.map((img, i) => (
                 <div key={i} className="relative">
-                  <img src={img} className="w-20 h-20 object-cover rounded-lg border border-gray-200" />
+                  <img src={img} className="w-20 h-20 object-cover rounded-xl border border-slate-800" />
                   <button
                     onClick={() => removeImage(i)}
-                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                    className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-md active:scale-90 transition"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -282,54 +305,54 @@ export default function NewTicket() {
           )}
 
           {images.length < 3 && (
-            <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl py-6 cursor-pointer hover:border-[#1a237e] transition">
-              <Camera className="w-8 h-8 text-gray-400 mb-2" />
-              <span className="text-sm text-gray-500 font-medium">Arrastra fotos aquí o haz clic</span>
-              <span className="text-xs text-gray-400 mt-1">Soporta JPG, PNG (Máx 5MB)</span>
+            <label className="border-2 border-dashed border-slate-700 bg-slate-950/40 hover:bg-slate-950/80 rounded-2xl py-6 cursor-pointer hover:border-blue-500 transition flex flex-col items-center justify-center text-center">
+              <Camera className="w-8 h-8 text-slate-500 mb-2" />
+              <span className="text-sm text-slate-300 font-bold">Arrastra fotos aquí o haz clic</span>
+              <span className="text-xs text-slate-500 mt-1">Soporta JPG, PNG (Máx 5MB, hasta 3 fotos)</span>
               <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
             </label>
           )}
         </div>
 
         {/* Punto de referencia */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Punto de Referencia <span className="text-gray-400">(Opcional)</span>
+        <div className="card">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Punto de Referencia <span className="text-slate-500 font-normal">(Opcional)</span>
           </label>
           <input
             value={form.reference_point}
             onChange={(e) => setForm({ ...form, reference_point: e.target.value })}
-            placeholder="Ej. Casa color rosada con reja negra"
-            className="w-full text-sm text-gray-700 focus:outline-none"
+            placeholder="Ej. Casa color rosada con reja negra frente a parque"
+            className="w-full text-sm text-slate-100 bg-transparent focus:outline-none placeholder-slate-600"
           />
         </div>
 
         {/* Nota de IA */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex gap-3 items-start">
+          <div className="w-8 h-8 bg-blue-600/20 border border-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p className="text-xs font-semibold text-blue-700 mb-0.5">Sistema Inteligente Activo</p>
-            <p className="text-xs text-blue-600">Tu reclamo será analizado por Gemini IA para clasificarlo y asignarlo al técnico más adecuado.</p>
+            <p className="text-xs font-bold text-blue-400 mb-0.5">Sistema Inteligente Gemini IA</p>
+            <p className="text-xs text-slate-300 leading-relaxed">Tu reclamo será pre-analizado por Gemini IA en tiempo real para determinar el nivel de urgencia, categoría y asignar al operario técnico adecuado.</p>
           </div>
         </div>
 
       </div>
 
       {/* Botones */}
-      <div className="px-4 py-4 bg-white border-t border-gray-200 flex gap-3">
+      <div className="px-4 py-4 bg-slate-900/90 border-t border-slate-800/80 flex gap-3 md:justify-end md:px-8 backdrop-blur-md">
         <button
           onClick={() => navigate('/dashboard')}
-          className="flex-1 border border-gray-300 text-gray-600 font-semibold py-3 rounded-xl text-sm"
+          className="flex-1 md:flex-none md:w-32 btn-secondary"
         >
           Cancelar
         </button>
         <button
           onClick={handleSubmit}
-          className="flex-2 flex-grow bg-[#1a237e] text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+          className="flex-2 flex-grow md:flex-none md:w-48 btn-primary flex items-center justify-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -338,6 +361,7 @@ export default function NewTicket() {
         </button>
       </div>
 
+      </div>
     </div>
   )
 }

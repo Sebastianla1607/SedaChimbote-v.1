@@ -1,11 +1,11 @@
-export default function EmptyState({ icon, title, subtitle }) {
+export default function EmptyState({ icon, title, description }) {
   return (
-    <div className="text-center py-16">
-      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+    <div className="flex flex-col items-center justify-center text-center py-16 px-4 card bg-slate-900/20 border-slate-800/40 backdrop-blur-sm max-w-md mx-auto">
+      <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
         {icon}
       </div>
-      <p className="text-gray-500 font-medium">{title}</p>
-      {subtitle && <p className="text-gray-400 text-sm mt-1">{subtitle}</p>}
+      <h3 className="text-slate-200 font-extrabold text-sm tracking-wide uppercase">{title}</h3>
+      {description && <p className="text-slate-400 text-xs mt-2 leading-relaxed">{description}</p>}
     </div>
   )
 }
