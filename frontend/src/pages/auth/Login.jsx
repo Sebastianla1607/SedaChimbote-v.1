@@ -65,7 +65,7 @@ export default function Login() {
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Código o correo"
+                    placeholder="     Código o correo"
                     className="input-base pl-12"
                     required
                   />
@@ -82,7 +82,7 @@ export default function Login() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="     ••••••••"
                     className="input-base pl-12 pr-10"
                     required
                   />
