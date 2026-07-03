@@ -32,7 +32,12 @@ api.interceptors.response.use(
 // ## Función para subir múltiples imágenes al servidor usando la instancia central de Axios
 export const uploadImages = async (files) => {
   const formData = new FormData()
-  files.forEach(file => formData.append('images', file))
+  // Aseguramos que solo se agreguen archivos válidos (File)
+  files.forEach(file => {
+    if (file instanceof File) {
+      formData.append('images', file)
+    }
+  })
 
   const { data } = await api.post('/upload/multiple', formData, {
     headers: {

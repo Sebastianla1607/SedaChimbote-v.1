@@ -249,7 +249,7 @@ export default function TicketDetail() {
                 </div>
               )}
 
-              {/* Formulario reporte final */}
+              {/* ✅ Formulario reporte final — NUEVO BLOQUE SEGÚN CLAUDE */}
               {showReportForm && (
                 <div className="card border-emerald-500/30">
                   <p className="text-sm font-bold text-slate-100 mb-3">Reporte Final de Trabajo</p>
@@ -269,16 +269,20 @@ export default function TicketDetail() {
                       multiple
                       className="hidden"
                       onChange={(e) => {
-                        const urls = Array.from(e.target.files).map(f => URL.createObjectURL(f))
-                        setReportImages([...reportImages, ...urls])
+                        const files = Array.from(e.target.files)
+                        setReportImages(prev => [...prev, ...files])
                       }}
                     />
                   </label>
+
                   {reportImages.length > 0 && (
                     <div className="flex gap-2 flex-wrap mb-3">
-                      {reportImages.map((img, i) => (
+                      {reportImages.map((file, i) => (
                         <div key={i} className="relative">
-                          <img src={img} className="w-16 h-16 object-cover rounded-lg" />
+                          <img
+                            src={file instanceof File ? URL.createObjectURL(file) : file}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
                           <button
                             onClick={() => setReportImages(reportImages.filter((_, idx) => idx !== i))}
                             className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center shadow-md"
@@ -289,22 +293,43 @@ export default function TicketDetail() {
                       ))}
                     </div>
                   )}
+
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setShowReportForm(false)}
+                      onClick={() => { setShowReportForm(false); setReportImages([]) }}
                       className="flex-1 btn-secondary"
                     >
                       Cancelar
                     </button>
                     <button
-                      onClick={() => handleAction('report', {
-                        description: reportDesc,
-                        image_urls: reportImages.length > 0 ? reportImages : ['https://example.com/evidencia.jpg']
-                      })}
+                      onClick={async () => {
+                        if (!reportDesc) return
+                        setActionLoading(true)
+                        try {
+                          let imageUrls = []
+                          if (reportImages.length > 0) {
+                            imageUrls = await uploadImages(reportImages)
+                          } else {
+                            imageUrls = ['https://via.placeholder.com/400x300?text=Sin+foto']
+                          }
+                          await handleAction('report', {
+                            description: reportDesc,
+                            image_urls: imageUrls
+                          })
+                          setReportImages([])
+                          setReportDesc('')
+                          setShowReportForm(false)
+                        } catch (err) {
+                          setError('Error al subir las imágenes: ' + err.message)
+                        } finally {
+                          setActionLoading(false)
+                        }
+                      }}
                       disabled={actionLoading || !reportDesc}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition active:scale-[0.98]"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition active:scale-[0.98] flex items-center justify-center gap-1"
                     >
-                      {actionLoading ? 'Enviando...' : 'Enviar Reporte'}
+                      {actionLoading ? <Loader className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                      {actionLoading ? 'Subiendo...' : 'Enviar Reporte'}
                     </button>
                   </div>
                 </div>
