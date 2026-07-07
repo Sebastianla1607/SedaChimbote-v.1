@@ -2,7 +2,7 @@ import { X, Bell, Check } from 'lucide-react'
 
 export default function NotificationPanel({ notifications, onClose, onMarkAllRead }) {
   return (
-    <div className="absolute top-24 right-4 w-80 bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-800/80 z-50 overflow-hidden animate-fade-in-up">
+    <div className="absolute top-24 md:top-20 right-2 sm:right-4 md:right-8 w-[calc(100vw-1rem)] sm:w-80 bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-800/80 z-50 overflow-hidden animate-fade-in-up">
       <div className="px-4 py-3.5 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/40">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-blue-400" />

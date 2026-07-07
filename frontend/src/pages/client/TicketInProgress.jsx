@@ -324,6 +324,23 @@ export default function TicketInProgress() {
               </div>
             </div>
 
+            {/* Evidencias */}
+            {ticket.evidences && ticket.evidences.filter(ev => ev.type === 'REPORTE_INICIAL').length > 0 && (
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">Evidencias Fotográficas</p>
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                  {ticket.evidences.filter(ev => ev.type === 'REPORTE_INICIAL').map((ev, i) => (
+                    <div key={i} className="relative flex-shrink-0 w-28 h-28 snap-start">
+                      <img src={ev.image_url} alt="Evidencia" className="w-full h-full object-cover rounded-xl border border-slate-700/80" />
+                      <span className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">
+                        Cliente
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Stepper */}
             <div className="card">
               <p className="label mb-5">Estado de la Solicitud</p>

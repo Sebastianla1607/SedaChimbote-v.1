@@ -174,31 +174,4 @@ const changePassword = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-const consultarDni = async (req, res) => {
-  try {
-    const { dni } = req.params
-    if (!dni || dni.length !== 8) {
-      return res.status(400).json({ error: 'DNI inválido' })
-    }
-
-    const axios = require('axios')
-    const { data } = await axios.get(`https://api.apis.net.pe/v2/reniec/dni?numero=${dni}`, {
-      headers: {
-        'Authorization': 'Bearer sk_16810.7IArNtqSTQ1lBq16CkM6J9d5gr5a2qty',
-        'Accept': 'application/json'
-      },
-      timeout: 5000
-    })
-
-    res.json({
-      nombres: data.nombres,
-      apellidoPaterno: data.apellidoPaterno,
-      apellidoMaterno: data.apellidoMaterno,
-      dni: data.numero
-    })
-  } catch (error) {
-    res.status(404).json({ error: 'No se encontró información para ese DNI' })
-  }
-}
-
-module.exports = { register, login, changePassword, consultarDni };
+module.exports = { register, login, changePassword };

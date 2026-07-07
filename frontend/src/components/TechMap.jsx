@@ -25,11 +25,18 @@ const techIcon = new L.Icon({
   popupAnchor: [1, -34],
 })
 
-const SetView = ({ center }) => {
+const SetView = ({ techPos, clientPos }) => {
   const map = useMap()
   useEffect(() => {
-    if (center) map.setView(center, 15)
-  }, [center])
+    if (techPos && clientPos) {
+      const bounds = L.latLngBounds([techPos, clientPos])
+      map.fitBounds(bounds, { padding: [50, 50] })
+    } else if (clientPos) {
+      map.setView(clientPos, 15)
+    } else if (techPos) {
+      map.setView(techPos, 15)
+    }
+  }, [techPos, clientPos, map])
   return null
 }
 
@@ -56,7 +63,7 @@ export default function TechMap({ clientLat, clientLng, clientAddress }) {
         setGeoError('No se pudo obtener tu ubicación')
         console.error(err)
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
 
     return () => navigator.geolocation.clearWatch(watchId)
@@ -114,7 +121,7 @@ export default function TechMap({ clientLat, clientLng, clientAddress }) {
             />
           )}
 
-          <SetView center={techPos || clientPos} />
+          <SetView techPos={techPos} clientPos={clientPos} />
         </MapContainer>
       </div>
 

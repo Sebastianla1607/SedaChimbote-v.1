@@ -1,4 +1,4 @@
-const { getTechTickets, startRoute, goToLocation, arrivedAtLocation, clientAbsent, startExecution, submitTechReport } = require('../services/tech.service')
+const { getTechTickets, startRoute, goToLocation, arrivedAtLocation, clientAbsent, startExecution, submitTechReport, getTechPerformance } = require('../services/tech.service')
 
 const myTickets = async (req, res) => {
   try {
@@ -63,4 +63,13 @@ const report = async (req, res) => {
   }
 }
 
-module.exports = { myTickets, start, goTo, arrived, absent, execute, report }
+const performance = async (req, res) => {
+  try {
+    const stats = await getTechPerformance(req.user.id)
+    res.json(stats)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+module.exports = { myTickets, start, goTo, arrived, absent, execute, report, performance }

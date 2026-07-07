@@ -6,7 +6,8 @@ const uploadImage = async (req, res) => {
       return res.status(400).json({ error: 'No se subió ninguna imagen' })
     }
 
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/evidencias/${req.file.filename}`
+    const folder = req.uploadFolder || 'uploads/evidencias'
+    const imageUrl = `${req.protocol}://${req.get('host')}/${folder}/${req.file.filename}`
 
     res.json({
       message: 'Imagen subida correctamente',
@@ -24,8 +25,9 @@ const uploadMultipleImages = async (req, res) => {
       return res.status(400).json({ error: 'No se subieron imágenes' })
     }
 
+    const folder = req.uploadFolder || 'uploads/evidencias'
     const urls = req.files.map(file =>
-      `${req.protocol}://${req.get('host')}/uploads/evidencias/${file.filename}`
+      `${req.protocol}://${req.get('host')}/${folder}/${file.filename}`
     )
 
     res.json({

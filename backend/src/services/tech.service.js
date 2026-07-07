@@ -301,6 +301,86 @@ const submitTechReport = async (techId, ticketId, data) => {
   return { message: 'Reporte enviado, ticket en espera de aprobación' }
 }
 
+// Estadísticas de rendimiento del técnico
+const getTechPerformance = async (techId) => {
+  const DAILY_TARGET = 10
+  const PERU_OFFSET_MS = -5 * 60 * 60 * 1000
+
+  // Fecha actual en UTC-5 (Perú)
+  const nowUtc = new Date()
+  const nowPeru = new Date(nowUtc.getTime() + PERU_OFFSET_MS)
+
+  const year = nowPeru.getUTCFullYear()
+  const month = nowPeru.getUTCMonth()
+  const day = nowPeru.getUTCDate()
+
+  // Inicio del día (medianoche Perú) en UTC
+  const todayStartUtc = new Date(Date.UTC(year, month, day) - PERU_OFFSET_MS)
+  // Inicio del mes (1ero del mes Perú) en UTC
+  const monthStartUtc = new Date(Date.UTC(year, month, 1) - PERU_OFFSET_MS)
+
+  const user = await prisma.user.findUnique({ where: { id: techId } })
+
+  // daily.closed
+  const dailyClosed = await prisma.ticket.count({
+    where: {
+      assigned_esp_id: techId,
+      status: 'CERRADO',
+      closed_at: { gte: todayStartUtc }
+    }
+  })
+
+  // monthly.closed
+  const monthlyClosed = await prisma.ticket.count({
+    where: {
+      assigned_esp_id: techId,
+      status: 'CERRADO',
+      closed_at: { gte: monthStartUtc }
+    }
+  })
+
+  // total all-time
+  const total = await prisma.ticket.count({
+    where: {
+      assigned_esp_id: techId,
+      status: 'CERRADO'
+    }
+  })
+
+  // calendar: agrupar tickets cerrados por día del mes actual
+  const closedThisMonth = await prisma.ticket.findMany({
+    where: {
+      assigned_esp_id: techId,
+      status: 'CERRADO',
+      closed_at: { gte: monthStartUtc }
+    },
+    select: { closed_at: true }
+  })
+
+  // Contar tickets por fecha (en zona horaria Perú)
+  const countsByDate = {}
+  for (const t of closedThisMonth) {
+    const peruDate = new Date(t.closed_at.getTime() + PERU_OFFSET_MS)
+    const dateStr = peruDate.toISOString().slice(0, 10)
+    countsByDate[dateStr] = (countsByDate[dateStr] || 0) + 1
+  }
+
+  // Generar array desde día 1 hasta hoy
+  const calendar = []
+  for (let d = 1; d <= day; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const count = countsByDate[dateStr] || 0
+    calendar.push({ date: dateStr, count, met_quota: count >= DAILY_TARGET })
+  }
+
+  return {
+    daily: { closed: dailyClosed, target: DAILY_TARGET },
+    monthly: { closed: monthlyClosed, target: user.monthly_quota || 200 },
+    total,
+    calendar
+  }
+}
+
 // ✅ Exportación al final (orden correcto)
 module.exports = {
   getTechTickets,
@@ -309,5 +389,6 @@ module.exports = {
   arrivedAtLocation,
   clientAbsent,
   startExecution,
-  submitTechReport
+  submitTechReport,
+  getTechPerformance
 }

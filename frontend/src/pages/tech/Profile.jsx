@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Lock, Eye, EyeOff, LogOut, CheckCircle } from 'lucide-react'
@@ -6,6 +6,7 @@ import api from '../../services/api'
 import MobileHeader from '../../components/layout/MobileHeader'
 import BottomNav from '../../components/layout/BottomNav'
 import Sidebar from '../../components/layout/Sidebar'
+import { PerformanceCalendar } from '../../components/ui/TechPerformance'
 
 export default function TechProfile() {
   const { user, logout } = useAuth()
@@ -17,6 +18,19 @@ export default function TechProfile() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [performanceData, setPerformanceData] = useState(null)
+
+  useEffect(() => {
+    const fetchPerformance = async () => {
+      try {
+        const { data } = await api.get('/tech/performance')
+        setPerformanceData(data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchPerformance()
+  }, [])
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
@@ -50,7 +64,12 @@ export default function TechProfile() {
       <div className="flex-1 md:pl-64 flex flex-col mobile-container z-10">
       <div className="bg-slate-900/40 border-b border-slate-900/60 px-4 pt-10 pb-8 flex flex-col items-center">
         <div className="w-full mb-4">
-          <MobileHeader showBack title="Mi Perfil" onBackClick={() => navigate('/tech/dashboard')} />
+          <div className="md:hidden">
+            <MobileHeader showBack title="Mi Perfil" onBackClick={() => navigate('/tech/dashboard')} />
+          </div>
+          <div className="hidden md:block px-4">
+            <h1 className="text-white text-2xl font-extrabold">Mi Perfil</h1>
+          </div>
         </div>
         <div className="w-20 h-20 bg-slate-800 border border-slate-700/50 rounded-full flex items-center justify-center mb-3 shadow-inner">
           <span className="text-white text-3xl font-black">{user?.first_name?.[0]}</span>
@@ -62,13 +81,17 @@ export default function TechProfile() {
         </div>
       </div>
 
-      <div className="flex-grow px-4 py-6 space-y-4 pb-24 md:px-8 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 md:items-start max-w-4xl w-full mx-auto">
+      <div className="flex-grow px-4 py-6 pb-24 md:px-8 max-w-4xl w-full mx-auto">
 
         {success && (
-          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl px-4 py-3 text-sm font-semibold flex items-center gap-2 md:col-span-2 mb-4">
+          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl px-4 py-3 text-sm font-semibold flex items-center gap-2 mb-4">
             <CheckCircle className="w-4 h-4 text-emerald-400" />{success}
           </div>
         )}
+
+        <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6 w-full">
+          {/* Columna Izquierda */}
+          <div className="flex-1 space-y-4 w-full md:max-w-[50%]">
 
         {/* Datos */}
         <div className="card overflow-hidden p-0">
@@ -96,6 +119,17 @@ export default function TechProfile() {
             </div>
           </div>
         </div>
+
+        {/* Calendario de Rendimiento */}
+        {performanceData && performanceData.calendar && (
+          <div className="w-full">
+            <PerformanceCalendar calendar={performanceData.calendar} />
+          </div>
+        )}
+        </div>
+
+        {/* Columna Derecha */}
+        <div className="flex-1 space-y-4 w-full md:max-w-[50%] mt-4 md:mt-0">
 
         {/* Cambio de contraseña */}
         <div className="card overflow-hidden p-0">
@@ -161,6 +195,8 @@ export default function TechProfile() {
           <LogOut className="w-4 h-4" />
           Cerrar sesión
         </button>
+        </div>
+        </div>
       </div>
 
       <BottomNav role="ESP_" />

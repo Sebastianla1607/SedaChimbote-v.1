@@ -50,7 +50,12 @@ export default function Profile() {
       <div className="flex-1 md:pl-64 flex flex-col mobile-container z-10">
       <div className="bg-slate-900/40 border-b border-slate-900/60 px-4 pt-10 pb-8 flex flex-col items-center">
         <div className="w-full mb-4">
-          <MobileHeader showBack title="Mi Perfil" onBackClick={() => navigate('/dashboard')} />
+          <div className="md:hidden">
+            <MobileHeader showBack title="Mi Perfil" onBackClick={() => navigate('/dashboard')} />
+          </div>
+          <div className="hidden md:block px-4">
+            <h1 className="text-white text-2xl font-extrabold">Mi Perfil</h1>
+          </div>
         </div>
         <div className="w-20 h-20 bg-slate-800 border border-slate-700/50 rounded-full flex items-center justify-center mb-3 shadow-inner">
           <span className="text-white text-3xl font-black">{user?.first_name?.[0]}</span>

@@ -71,8 +71,6 @@ const createTicket = async (userId, data) => {
     include: { customer: true }
   })
 
-  const code = await generateTicketCode()
-
   const due_date = new Date()
   due_date.setDate(due_date.getDate() + 30)
 
@@ -85,27 +83,42 @@ const createTicket = async (userId, data) => {
     if (assigned_esp_id) initialStatus = 'ASIGNADO'
   }
 
-  const ticket = await prisma.ticket.create({
-    data: {
-      code,
-      origin: 'CIUDADANO',
-      description,
-      reference_point: reference_point || null,
-      address: user.customer.address,
-      latitude: user.customer.latitude,
-      longitude: user.customer.longitude,
-      status: initialStatus,
-      priority: ai_priority || 'MEDIA',
-      due_date,
-      ai_category: ai_category || null,
-      ai_priority: ai_priority || null,
-      ai_specialty: ai_specialty || null,
-      ai_report: ai_report || null,
-      ai_difficulty: ai_difficulty || null,
-      created_by_id: userId,
-      assigned_esp_id: assigned_esp_id || null
+  let ticket = null
+  let retries = 3
+  while (retries > 0) {
+    try {
+      const code = await generateTicketCode()
+      ticket = await prisma.ticket.create({
+        data: {
+          code,
+          origin: 'CIUDADANO',
+          description,
+          reference_point: reference_point || null,
+          address: user.customer.address,
+          latitude: user.customer.latitude,
+          longitude: user.customer.longitude,
+          status: initialStatus,
+          priority: ai_priority || 'MEDIA',
+          due_date,
+          ai_category: ai_category || null,
+          ai_priority: ai_priority || null,
+          ai_specialty: ai_specialty || null,
+          ai_report: ai_report || null,
+          ai_difficulty: ai_difficulty || null,
+          created_by_id: userId,
+          assigned_esp_id: assigned_esp_id || null
+        }
+      })
+      break
+    } catch (err) {
+      if (err.code === 'P2002' && err.meta?.target?.includes('code')) {
+        retries--
+        if (retries === 0) throw new Error('No se pudo generar un código único para el ticket. Intenta de nuevo.')
+      } else {
+        throw err
+      }
     }
-  })
+  }
 
   await prisma.ticketLog.create({
     data: {
@@ -134,7 +147,7 @@ const createTicket = async (userId, data) => {
       data: {
         user_id: assigned_esp_id,
         ticket_id: ticket.id,
-        message: `Nuevo ticket asignado automáticamente: ${code}`
+        message: `Nuevo ticket asignado automáticamente: ${ticket.code}`
       }
     })
   }
@@ -159,6 +172,7 @@ const getClientTickets = async (userId) => {
       assigned_esp: {
         select: { access_code: true }
       },
+      evidences: true,
       logs: {
         select: { action: true, note: true },
         orderBy: { created_at: 'asc' }

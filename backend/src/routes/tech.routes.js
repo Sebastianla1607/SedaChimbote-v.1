@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { myTickets, start, goTo, arrived, absent, execute, report } = require('../controllers/tech.controller')
+const { myTickets, start, goTo, arrived, absent, execute, report, performance } = require('../controllers/tech.controller')
 const { verifyToken, authorizeRoles } = require('../middlewares/auth.middleware')
 const { techReportValidator } = require('../middlewares/validators')
 const validate = require('../middlewares/validate.middleware')
@@ -12,5 +12,6 @@ router.patch('/tickets/:id/arrived', verifyToken, authorizeRoles('ESP_'), arrive
 router.patch('/tickets/:id/absent', verifyToken, authorizeRoles('ESP_'), absent)
 router.patch('/tickets/:id/execute', verifyToken, authorizeRoles('ESP_'), execute)
 router.post('/tickets/:id/report', verifyToken, authorizeRoles('ESP_'), techReportValidator, validate, report)
+router.get('/performance', verifyToken, authorizeRoles('ESP_'), performance)
 
 module.exports = router

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../../services/api'
+import api, { uploadSingleImage } from '../../services/api'
 import { ArrowLeft, Camera, X, Loader, CheckCircle, AlertTriangle, RefreshCw, XCircle } from 'lucide-react'
 import { generateTicketPDF } from '../../services/pdfGenerator'
 import { Download } from 'lucide-react'
@@ -18,11 +18,18 @@ export default function NewTicket() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ description: '', reference_point: '' })
   const [images, setImages] = useState([])
+  const [imageFiles, setImageFiles] = useState([])
   const [imageBase64, setImageBase64] = useState(null)
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState(0)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    return () => {
+      images.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [images])
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files)
@@ -31,6 +38,7 @@ export default function NewTicket() {
     }
     const previews = files.map(f => URL.createObjectURL(f))
     setImages([...images, ...previews])
+    setImageFiles([...imageFiles, ...files])
 
     // Convertir primera imagen a base64 para Gemini
     const reader = new FileReader()
@@ -39,7 +47,9 @@ export default function NewTicket() {
   }
 
   const removeImage = (index) => {
+    URL.revokeObjectURL(images[index])
     setImages(images.filter((_, i) => i !== index))
+    setImageFiles(imageFiles.filter((_, i) => i !== index))
     if (index === 0) setImageBase64(null)
   }
 
@@ -51,12 +61,22 @@ export default function NewTicket() {
     setLoading(true)
     setPhase(0)
 
-    // Llamada a la API en paralelo con la animación
-    const apiPromise = api.post('/triage/analyze', {
-      description: form.description,
-      reference_point: form.reference_point,
-      imageBase64: imageBase64 || null
-    })
+
+    // Subir imagen y analizar en paralelo con la animación
+    const apiPromise = (async () => {
+      let imageUrl = null
+      if (imageFiles.length > 0) {
+        imageUrl = await uploadSingleImage(imageFiles[0])
+      }
+
+      const response = await api.post('/triage/analyze', {
+        description: form.description,
+        reference_point: form.reference_point,
+        imageBase64: imageBase64 || null,
+        imageUrl
+      })
+      return response
+    })()
 
     // Avanzar fases con tiempos definidos independientemente de la API
     const phaseDurations = [1200, 1000, 1000, 900, 800] // duración en ms para cada fase
@@ -254,92 +274,107 @@ export default function NewTicket() {
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto px-4 py-6 space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 md:items-start md:px-8 max-w-5xl w-full mx-auto">
+      <div className="flex-grow overflow-y-auto px-4 py-6 md:py-8 max-w-5xl w-full mx-auto">
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl px-4 py-3.5 text-sm md:col-span-2 font-semibold">
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl px-4 py-3.5 text-sm font-semibold mb-6 shadow-sm">
             {error}
           </div>
         )}
 
-        {/* Descripción */}
-        <div className="card">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Descripción del problema <span className="text-rose-500">*</span>
-          </label>
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Describe el problema con el mayor detalle posible para facilitar el análisis de la IA..."
-            rows={4}
-            className="w-full text-sm text-slate-100 bg-transparent resize-none focus:outline-none placeholder-slate-600"
-          />
-          <div className="flex justify-between items-center mt-2.5 pt-2.5 border-t border-slate-800/80">
-            <span className="text-xs text-slate-500">Mínimo 10 caracteres</span>
-            <span className={`text-xs font-bold ${form.description.length < 10 ? 'text-rose-500' : 'text-emerald-500'}`}>
-              {form.description.length} / 500
-            </span>
-          </div>
-        </div>
-
-        {/* Evidencia fotográfica */}
-        <div className="card">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
-            Evidencia Visual <span className="text-slate-500 font-normal">(Opcional)</span>
-          </label>
-
-          {images.length > 0 && (
-            <div className="flex gap-2.5 mb-3 flex-wrap">
-              {images.map((img, i) => (
-                <div key={i} className="relative">
-                  <img src={img} className="w-20 h-20 object-cover rounded-xl border border-slate-800" />
-                  <button
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-md active:scale-90 transition"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8">
+          
+          {/* Columna Principal (Formulario) */}
+          <div className="lg:col-span-2 space-y-5 md:space-y-6">
+            
+            {/* Descripción */}
+            <div className="card border border-slate-800/60 shadow-xl bg-slate-900/50">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+                Descripción del problema <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Describe el problema con el mayor detalle posible para facilitar el análisis de la IA..."
+                rows={6}
+                className="w-full text-sm md:text-base text-slate-100 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 resize-none focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder-slate-600"
+              />
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-800/80">
+                <span className="text-xs text-slate-500 font-medium">Recomendado: Añadir detalles visuales o ruidos</span>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${form.description.length < 10 ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                  {form.description.length} / 500
+                </span>
+              </div>
             </div>
-          )}
 
-          {images.length < 3 && (
-            <label className="border-2 border-dashed border-slate-700 bg-slate-950/40 hover:bg-slate-950/80 rounded-2xl py-6 cursor-pointer hover:border-blue-500 transition flex flex-col items-center justify-center text-center">
-              <Camera className="w-8 h-8 text-slate-500 mb-2" />
-              <span className="text-sm text-slate-300 font-bold">Arrastra fotos aquí o haz clic</span>
-              <span className="text-xs text-slate-500 mt-1">Soporta JPG, PNG (Máx 5MB, hasta 3 fotos)</span>
-              <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
-            </label>
-          )}
-        </div>
+            {/* Punto de referencia */}
+            <div className="card border border-slate-800/60 shadow-xl bg-slate-900/50">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+                Punto de Referencia <span className="text-slate-500 font-normal capitalize tracking-normal">(Opcional)</span>
+              </label>
+              <input
+                value={form.reference_point}
+                onChange={(e) => setForm({ ...form, reference_point: e.target.value })}
+                placeholder="Ej. Casa color rosada con reja negra frente a parque"
+                className="w-full text-sm md:text-base text-slate-100 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder-slate-600"
+              />
+            </div>
 
-        {/* Punto de referencia */}
-        <div className="card">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Punto de Referencia <span className="text-slate-500 font-normal">(Opcional)</span>
-          </label>
-          <input
-            value={form.reference_point}
-            onChange={(e) => setForm({ ...form, reference_point: e.target.value })}
-            placeholder="Ej. Casa color rosada con reja negra frente a parque"
-            className="w-full text-sm text-slate-100 bg-transparent focus:outline-none placeholder-slate-600"
-          />
-        </div>
-
-        {/* Nota de IA */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex gap-3 items-start">
-          <div className="w-8 h-8 bg-blue-600/20 border border-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
           </div>
-          <div>
-            <p className="text-xs font-bold text-blue-400 mb-0.5">Sistema Inteligente Gemini IA</p>
-            <p className="text-xs text-slate-300 leading-relaxed">Tu reclamo será pre-analizado por Gemini IA en tiempo real para determinar el nivel de urgencia, categoría y asignar al operario técnico adecuado.</p>
+
+          {/* Columna Secundaria (Adjuntos e IA) */}
+          <div className="space-y-5 md:space-y-6">
+            
+            {/* Evidencia fotográfica */}
+            <div className="card border border-slate-800/60 shadow-xl bg-slate-900/50">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+                Evidencia Visual <span className="text-slate-500 font-normal capitalize tracking-normal">(Opcional)</span>
+              </label>
+
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {images.map((img, i) => (
+                    <div key={i} className="relative aspect-square">
+                      <img src={img} className="w-full h-full object-cover rounded-xl border-2 border-slate-800/80 shadow-md" />
+                      <button
+                        onClick={() => removeImage(i)}
+                        className="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-[0_0_10px_rgba(225,29,72,0.5)] active:scale-90 transition"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {images.length < 3 && (
+                <label className="border-2 border-dashed border-slate-700/80 bg-slate-950/40 hover:bg-slate-800/60 rounded-2xl p-6 cursor-pointer hover:border-blue-500/60 transition-all flex flex-col items-center justify-center text-center group">
+                  <div className="w-12 h-12 bg-slate-800/50 group-hover:bg-blue-500/20 rounded-full flex items-center justify-center mb-3 transition-colors">
+                    <Camera className="w-6 h-6 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                  <span className="text-sm text-slate-300 font-bold group-hover:text-blue-300">Añadir foto</span>
+                  <span className="text-xs text-slate-500 mt-1.5">Soporta JPG, PNG</span>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
+                </label>
+              )}
+            </div>
+
+            {/* Nota de IA */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 flex flex-col gap-3 shadow-inner relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[40px] rounded-full pointer-events-none" />
+              <div className="w-10 h-10 bg-blue-600/20 border border-blue-500/30 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/10">
+                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-extrabold text-blue-400 mb-1.5">Sistema Inteligente Gemini IA</p>
+                <p className="text-xs text-blue-200/70 leading-relaxed font-medium">Tu reclamo será analizado en tiempo real por la IA para determinar la categoría, urgencia, y asignar al operario adecuado automáticamente.</p>
+              </div>
+            </div>
+
           </div>
         </div>
-
       </div>
 
       {/* Botones */}

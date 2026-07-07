@@ -12,6 +12,7 @@ export default function AdminNewTicket() {
     address: '',
     latitude: '',
     longitude: '',
+    reference_point: '',
     priority: 'MEDIA',
     specialty_id: '',
     assigned_esp_id: ''
@@ -42,9 +43,10 @@ export default function AdminNewTicket() {
     try {
       await api.post('/admin/tickets', {
         description: form.description,
+        reference_point: form.reference_point || null,
         address: form.address,
-        latitude: form.latitude ? parseFloat(form.latitude) : null,
-        longitude: form.longitude ? parseFloat(form.longitude) : null,
+        latitude: form.latitude && form.latitude.trim() !== '' ? parseFloat(form.latitude) : null,
+        longitude: form.longitude && form.longitude.trim() !== '' ? parseFloat(form.longitude) : null,
         priority: form.priority,
         specialty_id: form.specialty_id ? parseInt(form.specialty_id) : null,
         assigned_esp_id: form.assigned_esp_id ? parseInt(form.assigned_esp_id) : null
@@ -114,6 +116,17 @@ export default function AdminNewTicket() {
                 </div>
               </div>
 
+              <div>
+                <label className="label">Punto de Referencia <span className="text-slate-550 font-normal">(Opcional)</span></label>
+                <input
+                  name="reference_point"
+                  value={form.reference_point}
+                  onChange={handleChange}
+                  placeholder="Ej. Casa color verde frente a parque"
+                  className="input-base"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { name: 'latitude', label: 'Latitud', placeholder: '-9.0734' },
@@ -156,7 +169,7 @@ export default function AdminNewTicket() {
               <div>
                 <label className="label">Especialista Asignado</label>
                 <select name="assigned_esp_id" value={form.assigned_esp_id} onChange={handleChange} className={selectClass}>
-                  <option value="">Asignación automática por sistema</option>
+                  <option value="">Dejar como PENDIENTE (sin asignar)</option>
                   {techs.map(t => (
                     <option key={t.id} value={t.id}>
                       {t.access_code} — {t.first_name} {t.last_name_pat} {t.is_wip_locked ? '(En tarea)' : '(Disponible)'}

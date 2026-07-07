@@ -1,9 +1,10 @@
 const { analyzeTicket } = require('../services/gemini.service')
 const { createTicket } = require('../services/ticket.service')
+const prisma = require('../utils/prisma')
 
 const analyzeAndCreate = async (req, res) => {
   try {
-    const { description, reference_point, imageBase64 } = req.body
+    const { description, reference_point, imageBase64, imageUrl } = req.body
 
     if (!description) {
       return res.status(400).json({ error: 'La descripción es requerida' })
@@ -38,6 +39,17 @@ const analyzeAndCreate = async (req, res) => {
       ai_report: analysis.reporte,
       ai_difficulty: analysis.dificultad
     })
+
+    if (imageUrl) {
+      await prisma.evidence.create({
+        data: {
+          image_url: imageUrl,
+          type: 'REPORTE_INICIAL',
+          ticket_id: ticket.id,
+          uploaded_by_id: req.user.id
+        }
+      })
+    }
 
     return res.status(201).json({
       resultado: 'APROBADO',

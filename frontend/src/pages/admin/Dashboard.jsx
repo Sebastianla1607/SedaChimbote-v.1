@@ -14,18 +14,27 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('tickets')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(
+  const [isCollapsedState, setIsCollapsedState] = useState(
     localStorage.getItem('admin-sidebar-collapsed') === 'true'
   )
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
-    if (isCollapsed) {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const isCollapsed = isMobile ? false : isCollapsedState
+
+  useEffect(() => {
+    if (isCollapsedState) {
       document.body.classList.add('admin-sidebar-collapsed')
     } else {
       document.body.classList.remove('admin-sidebar-collapsed')
     }
-    localStorage.setItem('admin-sidebar-collapsed', isCollapsed)
-  }, [isCollapsed])
+    localStorage.setItem('admin-sidebar-collapsed', isCollapsedState)
+  }, [isCollapsedState])
   const [tickets, setTickets] = useState([])
   const [techs, setTechs] = useState([])
   const [clients, setClients] = useState([])
@@ -133,11 +142,11 @@ export default function AdminDashboard() {
       )}
 
       {/* Sidebar */}
-      <div className={`bg-slate-900/60 border-r border-slate-900/60 backdrop-blur-md flex flex-col fixed h-full z-30 transition-all duration-300 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-56'}`}>
+      <div className={`bg-slate-900/60 border-r border-slate-900/60 backdrop-blur-md flex flex-col fixed h-full z-40 transition-all duration-300 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64 md:w-56'}`}>
         
         {/* Toggle button */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={() => setIsCollapsedState(!isCollapsedState)}
           className="hidden md:flex absolute top-10 -right-3 w-6 h-6 bg-blue-600 hover:bg-blue-500 text-white rounded-full items-center justify-center border border-slate-900 shadow-lg cursor-pointer z-50 transition hover:scale-110 active:scale-95"
         >
           {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
@@ -237,7 +246,7 @@ export default function AdminDashboard() {
 
         {/* Notificaciones */}
         {showNotifications && (
-          <div className="absolute top-18 right-6 w-80 bg-slate-900/95 border border-slate-800/80 rounded-2xl shadow-2xl z-50 backdrop-blur-md">
+          <div className="absolute top-18 right-2 sm:right-6 w-[calc(100vw-1rem)] max-w-sm sm:w-80 bg-slate-900/95 border border-slate-800/80 rounded-2xl shadow-2xl z-50 backdrop-blur-md">
             <div className="px-4 py-3.5 border-b border-slate-800/80 flex items-center justify-between">
               <span className="font-bold text-slate-100 text-sm">Notificaciones</span>
               <button onClick={() => setShowNotifications(false)}>
@@ -477,6 +486,37 @@ export default function AdminDashboard() {
                   ) : <p className="text-xs text-slate-500 font-semibold italic">Ticket creado manualmente por administración</p>}
                 </div>
               </div>
+
+              {/* ✅ EVIDENCIAS CLIENTE */}
+              {ticketHistory.evidences && ticketHistory.evidences.filter(e => e.type === 'REPORTE_INICIAL').length > 0 && (
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-wider">Evidencia Inicial (Cliente)</p>
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                    {ticketHistory.evidences.filter(e => e.type === 'REPORTE_INICIAL').map((ev, i) => (
+                      <div key={i} className="relative flex-shrink-0 w-24 h-24 snap-start group">
+                        <img src={ev.image_url} alt="Evidencia Cliente" className="w-full h-full object-cover rounded-xl border border-slate-700/80 group-hover:border-blue-500/50 transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ✅ FOTOS REPORTE TECNICO */}
+              {ticketHistory.evidences && ticketHistory.evidences.filter(e => e.type !== 'REPORTE_INICIAL').length > 0 && (
+                <div className="bg-blue-950/20 border border-blue-900/30 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-blue-400 mb-3 uppercase tracking-wider">Fotos del Reporte (Técnico)</p>
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                    {ticketHistory.evidences.filter(e => e.type !== 'REPORTE_INICIAL').map((ev, i) => (
+                      <div key={i} className="relative flex-shrink-0 w-24 h-24 snap-start group">
+                        <img src={ev.image_url} alt="Foto Reporte" className="w-full h-full object-cover rounded-xl border border-blue-800/50 group-hover:border-blue-500/80 transition-colors" />
+                        {ev.type === 'AUSENCIA' && (
+                          <span className="absolute bottom-1.5 right-1.5 bg-rose-500/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md">Ausencia</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Reporte técnico */}
               {ticketHistory.tech_report && (

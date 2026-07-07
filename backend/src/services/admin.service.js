@@ -30,41 +30,57 @@ const getAllTickets = async (filters = {}) => {
 
 // Crear ticket interno
 const createInternalTicket = async (adminId, data) => {
-  const { description, address, latitude, longitude, priority, specialty_id, assigned_esp_id } = data
+  const { description, reference_point, address, latitude, longitude, priority, specialty_id, assigned_esp_id } = data
 
   const due_date = new Date()
   due_date.setDate(due_date.getDate() + 30)
 
-  // Generar código
-  const date = new Date()
-  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
-  const lastTicket = await prisma.ticket.findFirst({
-    where: { code: { startsWith: `REC-${dateStr}` } },
-    orderBy: { created_at: 'desc' }
-  })
-  let sequence = 1
-  if (lastTicket) {
-    const lastSequence = parseInt(lastTicket.code.split('-')[2])
-    sequence = lastSequence + 1
-  }
-  const code = `REC-${dateStr}-${String(sequence).padStart(4, '0')}`
+  // Generar código con reintentos
+  let ticket = null
+  let retries = 3
+  
+  while (retries > 0) {
+    try {
+      const date = new Date()
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
+      const lastTicket = await prisma.ticket.findFirst({
+        where: { code: { startsWith: `REC-${dateStr}` } },
+        orderBy: { created_at: 'desc' }
+      })
+      let sequence = 1
+      if (lastTicket) {
+        const lastSequence = parseInt(lastTicket.code.split('-')[2])
+        sequence = lastSequence + 1
+      }
+      const code = `REC-${dateStr}-${String(sequence).padStart(4, '0')}`
 
-  const ticket = await prisma.ticket.create({
-    data: {
-      code,
-      origin: 'INTERNO',
-      description,
-      address,
-      latitude: latitude || null,
-      longitude: longitude || null,
-      status: assigned_esp_id ? 'ASIGNADO' : 'PENDIENTE',
-      priority: priority || 'MEDIA',
-      due_date,
-      specialty_id: specialty_id || null,
-      created_by_id: adminId,
-      assigned_esp_id: assigned_esp_id || null
+      ticket = await prisma.ticket.create({
+        data: {
+          code,
+          origin: 'INTERNO',
+          description,
+          reference_point: reference_point || null,
+          address,
+          latitude: latitude || null,
+          longitude: longitude || null,
+          priority: priority || 'MEDIA',
+          status: assigned_esp_id ? 'ASIGNADO' : 'PENDIENTE',
+          due_date,
+          created_by_id: adminId,
+          specialty_id: specialty_id ? parseInt(specialty_id) : null,
+          assigned_esp_id: assigned_esp_id || null
+        }
+      })
+      break
+    } catch (err) {
+      if (err.code === 'P2002' && err.meta?.target?.includes('code')) {
+        retries--
+        if (retries === 0) throw new Error('No se pudo generar un código único para el ticket. Intenta de nuevo.')
+      } else {
+        throw err
+      }
     }
-  })
+  }
 
   // Log
   await prisma.ticketLog.create({
@@ -93,7 +109,7 @@ const createInternalTicket = async (adminId, data) => {
       data: {
         user_id: assigned_esp_id,
         ticket_id: ticket.id,
-        message: `Tienes un nuevo ticket asignado: ${code}`
+        message: `Tienes un nuevo ticket asignado: ${ticket.code}`
       }
     })
   }

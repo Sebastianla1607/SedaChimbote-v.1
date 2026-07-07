@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
-import { Plus, Clock, Ticket, User, XCircle, Loader } from 'lucide-react'
+import { Plus, Clock, Ticket, User, XCircle, Loader, Bell } from 'lucide-react'
 import BottomNav from '../../components/layout/BottomNav'
 import MobileHeader from '../../components/layout/MobileHeader'
 import Sidebar from '../../components/layout/Sidebar'
@@ -85,7 +85,22 @@ export default function ClientDashboard() {
             }}
           />
 
-          <h2 className="text-white text-2xl font-extrabold mt-2">Hola, {user?.first_name} 👋</h2>
+          <div className="hidden md:flex items-center justify-between mb-4">
+            <h2 className="text-white text-2xl font-extrabold mt-2">Hola, {user?.first_name} 👋</h2>
+            <button onClick={() => {
+              setShowNotifications(!showNotifications)
+              if (!showNotifications) markAllRead()
+            }} className="relative text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800/80 p-2.5 rounded-xl transition">
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-lg">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
+          
+          <h2 className="md:hidden text-white text-2xl font-extrabold mt-2">Hola, {user?.first_name} 👋</h2>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="bg-blue-600/15 text-blue-300 border border-blue-500/20 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,7 +136,7 @@ export default function ClientDashboard() {
 
         {/* Tabs */}
         <div className="bg-slate-950 border-b border-slate-900 px-4 md:px-8">
-          <div className="flex">
+          <div className="flex max-w-md mx-auto">
             <button
               onClick={() => setTab('activos')}
               className={`flex-1 py-4 text-center text-xs uppercase tracking-wider font-extrabold border-b-2 transition ${
@@ -148,7 +163,7 @@ export default function ClientDashboard() {
         </div>
 
         {/* Lista tickets */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 pb-32 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 space-y-0 md:px-8">
+        <div className="flex-1 overflow-y-auto px-4 py-6 pb-32 md:pb-24 flex flex-col gap-3 max-w-3xl mx-auto w-full md:px-8">
           {loading ? (
             <div className="col-span-full flex justify-center py-12">
               <Loader className="w-8 h-8 text-blue-500 animate-spin" />
@@ -179,27 +194,13 @@ export default function ClientDashboard() {
           )}
         </div>
 
-        {/* Botón flotante */}
-        {tab === 'activos' && (
-          <button
-            onClick={() => { if (activeTickets.length === 0) navigate('/client/new-ticket') }}
-            disabled={activeTickets.length > 0}
-            className={`fixed bottom-24 left-1/2 -translate-x-1/2 font-bold px-6 py-3.5 rounded-full shadow-xl flex items-center gap-2 transition text-sm z-35 ${
-              activeTickets.length > 0
-                ? 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]'
-            }`}
-          >
-            <Plus className="w-5 h-5" />
-            {activeTickets.length > 0 ? 'Ya tienes un reclamo activo' : 'Reportar Reclamo'}
-          </button>
-        )}
+
 
         {/* Modal detalle ticket */}
         {selectedTicket && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center">
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-end md:items-center justify-center md:p-4">
             <div className="absolute inset-0" onClick={() => setSelectedTicket(null)} />
-            <div className="bg-slate-900 border-t border-slate-800 rounded-t-[2rem] w-full max-w-md max-h-[85vh] overflow-y-auto p-6 z-10 shadow-2xl relative">
+            <div className="bg-slate-900 border-t md:border border-slate-800 rounded-t-[2rem] md:rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6 z-10 shadow-2xl relative">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-extrabold text-slate-100 text-lg">Detalle del Reclamo</h3>
                 <div className="flex items-center gap-3">
@@ -249,6 +250,22 @@ export default function ClientDashboard() {
                     <p className="text-sm text-slate-200 font-semibold">{new Date(selectedTicket.due_date).toLocaleDateString('es-PE')}</p>
                   </div>
                 </div>
+
+                {selectedTicket.evidences && selectedTicket.evidences.filter(ev => ev.type === 'REPORTE_INICIAL').length > 0 && (
+                  <div className="card border border-slate-800/60 shadow-xl bg-slate-900/50">
+                    <p className="label mb-2">Evidencias Fotográficas (Cliente)</p>
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                      {selectedTicket.evidences.filter(ev => ev.type === 'REPORTE_INICIAL').map((ev, i) => (
+                        <div key={i} className="relative flex-shrink-0 w-24 h-24 snap-start">
+                          <img src={ev.image_url} alt="Evidencia" className="w-full h-full object-cover rounded-xl border border-slate-700/80" />
+                          <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">
+                            Cliente
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {selectedTicket.assigned_esp?.access_code && (
                   <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-3">

@@ -19,6 +19,13 @@ export default function TicketDetail() {
   const [absentNote, setAbsentNote] = useState('')
   const [reportDesc, setReportDesc] = useState('')
   const [reportImages, setReportImages] = useState([])
+  const [previewImages, setPreviewImages] = useState([])
+
+  useEffect(() => {
+    return () => {
+      previewImages.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [previewImages])
 
   // ✅ Polling cada 5 segundos
   useEffect(() => {
@@ -141,6 +148,23 @@ export default function TicketDetail() {
                   </div>
                 )}
               </div>
+
+              {/* Evidencias */}
+              {ticket.evidences && ticket.evidences.filter(ev => ev.type === 'REPORTE_INICIAL').length > 0 && (
+                <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
+                  <p className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-wider">Evidencias Fotográficas (Cliente)</p>
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                    {ticket.evidences.filter(ev => ev.type === 'REPORTE_INICIAL').map((ev, i) => (
+                      <div key={i} className="relative flex-shrink-0 w-24 h-24 snap-start group">
+                        <img src={ev.image_url} alt="Evidencia" className="w-full h-full object-cover rounded-xl border border-slate-700/80 group-hover:border-blue-500/50 transition-colors" />
+                        <span className="absolute bottom-1.5 right-1.5 bg-slate-950/80 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md border border-slate-700/50">
+                          Cliente
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Análisis IA */}
               {ticket.ai_report && (
@@ -270,7 +294,9 @@ export default function TicketDetail() {
                       className="hidden"
                       onChange={(e) => {
                         const files = Array.from(e.target.files)
+                        const previews = files.map(f => URL.createObjectURL(f))
                         setReportImages(prev => [...prev, ...files])
+                        setPreviewImages(prev => [...prev, ...previews])
                       }}
                     />
                   </label>
@@ -280,11 +306,16 @@ export default function TicketDetail() {
                       {reportImages.map((file, i) => (
                         <div key={i} className="relative">
                           <img
-                            src={file instanceof File ? URL.createObjectURL(file) : file}
+                            src={previewImages[i] || file}
+                            alt="preview"
                             className="w-16 h-16 object-cover rounded-lg"
                           />
                           <button
-                            onClick={() => setReportImages(reportImages.filter((_, idx) => idx !== i))}
+                            onClick={() => {
+                              URL.revokeObjectURL(previewImages[i])
+                              setReportImages(reportImages.filter((_, idx) => idx !== i))
+                              setPreviewImages(previewImages.filter((_, idx) => idx !== i))
+                            }}
                             className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center shadow-md"
                           >
                             <X className="w-2.5 h-2.5" />
@@ -308,7 +339,7 @@ export default function TicketDetail() {
                         try {
                           let imageUrls = []
                           if (reportImages.length > 0) {
-                            imageUrls = await uploadImages(reportImages)
+                            imageUrls = await uploadImages(reportImages, 'reportes')
                           } else {
                             imageUrls = ['https://via.placeholder.com/400x300?text=Sin+foto']
                           }

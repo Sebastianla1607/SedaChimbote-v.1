@@ -30,7 +30,7 @@ api.interceptors.response.use(
 )
 
 // ## Función para subir múltiples imágenes al servidor usando la instancia central de Axios
-export const uploadImages = async (files) => {
+export const uploadImages = async (files, folder = 'evidencias') => {
   const formData = new FormData()
   // Aseguramos que solo se agreguen archivos válidos (File)
   files.forEach(file => {
@@ -39,7 +39,7 @@ export const uploadImages = async (files) => {
     }
   })
 
-  const { data } = await api.post('/upload/multiple', formData, {
+  const { data } = await api.post(`/upload/multiple?folder=${folder}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -48,11 +48,11 @@ export const uploadImages = async (files) => {
 }
 
 // ## Función para subir una imagen al servidor usando la instancia central de Axios
-export const uploadSingleImage = async (file) => {
+export const uploadSingleImage = async (file, folder = 'evidencias') => {
   const formData = new FormData()
   formData.append('image', file)
 
-  const { data } = await api.post('/upload/single', formData, {
+  const { data } = await api.post(`/upload/single?folder=${folder}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
