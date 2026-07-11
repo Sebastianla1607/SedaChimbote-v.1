@@ -78,7 +78,7 @@ export default function Profile() {
             {[
               { icon: <User className="w-4 h-4 text-blue-400" />, label: 'Nombre', value: user?.first_name },
               { icon: <Mail className="w-4 h-4 text-blue-400" />, label: 'Correo', value: user?.email },
-              { icon: <Home className="w-4 h-4 text-blue-400" />, label: 'N° Suministro', value: `SUM-${String(user?.id).padStart(3, '0')}` },
+              { icon: <Home className="w-4 h-4 text-blue-400" />, label: 'N° Suministro', value: user?.supply_code || 'No asignado' },
             ].map(({ icon, label, value }) => (
               <div key={label} className="px-4 py-3.5 flex items-center gap-3">
                 <div className="w-8 h-8 bg-slate-950/40 border border-slate-800/80 rounded-lg flex items-center justify-center">{icon}</div>

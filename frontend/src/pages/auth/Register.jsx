@@ -22,7 +22,6 @@ export default function Register() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loadingDni, setLoadingDni] = useState(false)
   const navigate = useNavigate()
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
@@ -35,24 +34,6 @@ export default function Register() {
     setStep(2)
   }
 
-  const handleConsultDni = async () => {
-    if (form.doc_number.length !== 8) return setError('El DNI debe tener 8 dígitos')
-    setLoadingDni(true)
-    setError('')
-    try {
-      const { data } = await api.get(`/auth/consultar-dni/${form.doc_number}`)
-      setForm({
-        ...form,
-        first_name: data.nombres || '',
-        last_name_pat: data.apellidoPaterno || '',
-        last_name_mat: data.apellidoMaterno || ''
-      })
-    } catch (err) {
-      setError('No se pudo consultar el DNI, ingresa los datos manualmente')
-    } finally {
-      setLoadingDni(false)
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -163,16 +144,6 @@ export default function Register() {
                           className="input-base flex-1"
                           required
                         />
-                        {form.doc_type === 'DNI' && (
-                          <button
-                            type="button"
-                            onClick={handleConsultDni}
-                            disabled={loadingDni}
-                            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 rounded-xl flex items-center justify-center disabled:opacity-50 transition active:scale-[0.98] whitespace-nowrap"
-                          >
-                            {loadingDni ? <Loader className="w-3.5 h-3.5 animate-spin" /> : 'Buscar'}
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>

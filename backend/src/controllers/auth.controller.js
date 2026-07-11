@@ -101,6 +101,7 @@ const register = async (req, res) => {
         role: user.role,
         first_name: user.first_name,
         email: user.email,
+        supply_code: supply_code,
       },
     });
   } catch (error) {
@@ -119,6 +120,7 @@ const login = async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: isEmail ? { email: identifier } : { access_code: identifier },
+      include: { customer: true }
     });
 
     if (!user || !user.is_active) {
@@ -150,6 +152,7 @@ const login = async (req, res) => {
         first_name: user.first_name,
         access_code: user.access_code || null,
         email: user.email || null,
+        supply_code: user.customer?.supply_code || null,
       },
     });
   } catch (error) {

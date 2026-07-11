@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
+const prisma = require('../utils/prisma')
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
 
@@ -10,6 +11,12 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } })
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: 'Usuario inactivo o eliminado' })
+    }
+    
     req.user = decoded
     next()
   } catch (error) {
