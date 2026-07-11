@@ -15,7 +15,20 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname)
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`
+    
+    // Extraer datos del request
+    const role = req.user?.role?.replace('_', '') || 'UNK'
+    const id = req.user?.id || '0'
+    const isReporte = req.uploadFolder?.includes('reportes')
+    const prefix = isReporte ? 'REP' : 'EVI'
+    
+    // Fecha formato YYYYMMDD-HHMMSS
+    const now = new Date()
+    const dateStr = now.toISOString().replace(/[-:T]/g, '').slice(0, 14)
+    
+    // Generar nombre ordenado: [TIPO]-[ROL][ID]-[FECHA_HORA].[EXT]
+    const name = `${prefix}-${role}${id}-${dateStr}${ext}`
+    
     cb(null, name)
   }
 })
