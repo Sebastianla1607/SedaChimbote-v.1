@@ -454,7 +454,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-slate-400 max-w-xs line-clamp-1 font-semibold">{client.customer?.address}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-black text-blue-400">{client.tickets_created?.length}</span>
+                        <span className="text-sm font-black text-blue-400">{client._count?.tickets_created || 0}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${client.is_active ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'}`}>

@@ -48,9 +48,29 @@ Responde ÚNICAMENTE en este formato JSON exacto, sin texto adicional, sin markd
 {"tipo":"APROBADO","categoria":"nombre categoria","prioridad":"BAJA|MEDIA|ALTA|EXTREMA","dificultad":"SIMPLE|MODERADO|COMPLEJO","reporte":"descripción técnica breve máximo 200 caracteres","mensaje_cliente":"mensaje para el cliente"}
 `
 
+  const messages = [
+    { 
+      role: 'user', 
+      content: [
+        { type: 'text', text: prompt }
+      ]
+    }
+  ]
+
+  if (imageBase64) {
+    messages[0].content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${imageBase64}`
+      }
+    })
+  }
+
+  const model = imageBase64 ? 'llama-3.2-90b-vision-preview' : 'llama-3.3-70b-versatile'
+
   const completion = await groq.chat.completions.create({
-    messages: [{ role: 'user', content: prompt }],
-    model: 'llama-3.3-70b-versatile',
+    messages,
+    model,
     temperature: 0.3,
     max_tokens: 500
   })

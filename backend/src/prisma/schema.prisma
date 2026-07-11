@@ -110,6 +110,8 @@ model User {
   logs              TicketLog[]
   notifications     Notification[]
   tech_reports      TechReport[]
+
+  @@index([role, is_active])
 }
 
 model Specialty {
@@ -172,6 +174,12 @@ model Ticket {
   notifications          Notification[]
   tech_report            TechReport?
   client_survey          ClientSurvey?
+
+  @@index([status])
+  @@index([priority])
+  @@index([created_by_id])
+  @@index([assigned_esp_id])
+  @@index([created_at])
 }
 
 model Evidence {
@@ -200,6 +208,8 @@ model TicketLog {
 
   user_id     Int
   user        User      @relation(fields: [user_id], references: [id])
+
+  @@index([ticket_id])
 }
 
 model TechReport {
@@ -237,4 +247,6 @@ model Notification {
 
   ticket_id  Int?
   ticket     Ticket?  @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read])
 }

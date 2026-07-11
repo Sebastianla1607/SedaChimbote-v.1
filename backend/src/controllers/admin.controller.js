@@ -97,15 +97,8 @@ const getClients = async (req, res) => {
             doc_number: true
           }
         },
-        tickets_created: {
-          select: {
-            id: true,
-            code: true,
-            status: true,
-            priority: true,
-            created_at: true
-          },
-          orderBy: { created_at: 'desc' }
+        _count: {
+          select: { tickets_created: true }
         }
       },
       orderBy: { created_at: 'desc' }
