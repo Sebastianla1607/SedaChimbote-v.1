@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
-import { ArrowLeft, Clock, CheckCircle, AlertTriangle, Loader } from 'lucide-react'
+import { generateFinalTicketPDF } from '../../services/pdfGenerator'
+import { ArrowLeft, Clock, CheckCircle, AlertTriangle, Loader, Download } from 'lucide-react'
 import Sidebar from '../../components/layout/Sidebar'
 
 const steps = [
@@ -25,6 +26,7 @@ export default function TicketInProgress() {
   const [npsComment, setNpsComment] = useState('')
   const [surveyDone, setSurveyDone] = useState(false)
   const [presenceResponded, setPresenceResponded] = useState(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   useEffect(() => {
     fetchTicket()
@@ -305,6 +307,29 @@ export default function TicketInProgress() {
                     <p className="text-emerald-400 text-sm font-bold">¡Muchas gracias por tu calificación! 🙏</p>
                   </div>
                 )}
+                <div className="mt-4 pt-4 border-t border-slate-800/80">
+                  <button
+                    onClick={async () => {
+                      setIsGeneratingPdf(true)
+                      try {
+                        await generateFinalTicketPDF(ticket)
+                      } catch (e) {
+                        console.error(e)
+                        alert('Error al generar el PDF. Asegúrate de tener conexión.')
+                      }
+                      setIsGeneratingPdf(false)
+                    }}
+                    disabled={isGeneratingPdf}
+                    className="w-full flex items-center justify-center gap-2 bg-blue-600/10 border border-blue-500/30 hover:bg-blue-600/20 hover:border-blue-500/50 text-blue-400 font-bold py-3 rounded-xl transition duration-200"
+                  >
+                    {isGeneratingPdf ? (
+                      <Loader className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Download className="w-5 h-5" />
+                    )}
+                    {isGeneratingPdf ? 'Generando Documento...' : 'Descargar Reporte Final (PDF)'}
+                  </button>
+                </div>
               </div>
             )}
           </div>

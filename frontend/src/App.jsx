@@ -15,7 +15,6 @@ import TechProfile from './pages/tech/Profile'
 
 
 
-
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen">Cargando...</div>

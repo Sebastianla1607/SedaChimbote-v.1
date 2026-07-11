@@ -4,15 +4,16 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
 import {
   Bell, Plus, Users, Ticket, AlertTriangle, CheckCircle,
-  Clock, Eye, UserPlus, X, Loader, ChevronRight, ChevronLeft, LogOut
+  Clock, Eye, UserPlus, X, Loader, ChevronRight, ChevronLeft, LogOut, BarChart3
 } from 'lucide-react'
 import Logo from '../../components/ui/Logo'
 import { PriorityBadge, StatusBadge, priorityConfig } from '../../components/ui/StatusBadge'
+import StatsTab from '../../components/admin/StatsTab'
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [tab, setTab] = useState('tickets')
+  const [tab, setTab] = useState(user?.role === 'JEF_' ? 'stats' : 'tickets')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isCollapsedState, setIsCollapsedState] = useState(
     localStorage.getItem('admin-sidebar-collapsed') === 'true'
@@ -121,6 +122,10 @@ export default function AdminDashboard() {
     { id: 'clients', label: 'Clientes', icon: <Users className="w-4 h-4" /> },
   ]
 
+  if (user?.role === 'JEF_') {
+    navItems.unshift({ id: 'stats', label: 'Estadísticas', icon: <BarChart3 className="w-4 h-4" /> })
+  }
+
   const filteredTechs = techs.filter(t =>
     t.is_active && (
       techSearch === '' ||
@@ -213,6 +218,7 @@ export default function AdminDashboard() {
             </button>
             <div>
               <h1 className="text-sm md:text-lg font-black text-slate-100 uppercase tracking-wide">
+                {tab === 'stats' && 'Dashboard Gerencial'}
                 {tab === 'tickets' && 'Dashboard Operativo Central'}
                 {tab === 'techs' && 'Gestión de Técnicos'}
                 {tab === 'clients' && 'Clientes Registrados'}
@@ -277,6 +283,9 @@ export default function AdminDashboard() {
         )}
 
         <div className="flex-1 p-6">
+
+          {/* TAB ESTADÍSTICAS */}
+          {tab === 'stats' && <StatsTab />}
 
           {/* TAB TICKETS */}
           {tab === 'tickets' && (

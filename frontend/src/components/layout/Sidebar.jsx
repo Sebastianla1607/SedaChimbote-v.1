@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Home, Ticket, User, LogOut, Plus, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, Ticket, User, LogOut, Plus, UserPlus, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react'
 import Logo from '../ui/Logo'
 
 const menuItems = {
