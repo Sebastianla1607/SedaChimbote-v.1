@@ -5,6 +5,7 @@ import { ArrowLeft, Camera, X, Loader, CheckCircle, AlertTriangle, RefreshCw, XC
 import { generateTicketPDF } from '../../services/pdfGenerator'
 import { Download } from 'lucide-react'
 import Sidebar from '../../components/layout/Sidebar'
+import imageCompression from 'browser-image-compression'
 
 const PHASES = [
   'Analizando descripción...',
@@ -24,6 +25,18 @@ export default function NewTicket() {
   const [phase, setPhase] = useState(0)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [location, setLocation] = useState(null)
+
+  useEffect(() => {
+    // Intentar obtener GPS del cliente al cargar el formulario
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.log('GPS no disponible:', err),
+        { enableHighAccuracy: true, timeout: 5000 }
+      )
+    }
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -31,19 +44,39 @@ export default function NewTicket() {
     }
   }, [images])
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files)
     if (files.length + images.length > 3) {
       return setError('Máximo 3 fotos')
     }
-    const previews = files.map(f => URL.createObjectURL(f))
+
+    const compressedFiles = []
+    const previews = []
+
+    for (const file of files) {
+      try {
+        const options = {
+          maxSizeMB: 1, // Comprimir a máximo 1MB
+          maxWidthOrHeight: 1280, // Redimensionar si es muy grande
+          useWebWorker: true
+        }
+        const compressed = await imageCompression(file, options)
+        compressedFiles.push(compressed)
+        previews.push(URL.createObjectURL(compressed))
+      } catch (error) {
+        console.error('Error comprimiendo imagen', error)
+        compressedFiles.push(file)
+        previews.push(URL.createObjectURL(file))
+      }
+    }
+
     setImages([...images, ...previews])
-    setImageFiles([...imageFiles, ...files])
+    setImageFiles([...imageFiles, ...compressedFiles])
 
     // Convertir primera imagen a base64 para Gemini
     const reader = new FileReader()
     reader.onload = () => setImageBase64(reader.result.split(',')[1])
-    reader.readAsDataURL(files[0])
+    reader.readAsDataURL(compressedFiles[0])
   }
 
   const removeImage = (index) => {
@@ -73,7 +106,9 @@ export default function NewTicket() {
         description: form.description,
         reference_point: form.reference_point,
         imageBase64: imageBase64 || null,
-        imageUrl
+        imageUrl,
+        latitude: location?.lat || null,
+        longitude: location?.lng || null
       })
       return response
     })()

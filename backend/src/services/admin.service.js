@@ -11,6 +11,7 @@ const getAllTickets = async (filters = {}) => {
 
   const tickets = await prisma.ticket.findMany({
     where,
+    take: 200, // Prevenir desbordamiento de RAM con 10k+ tickets
     orderBy: [
       { priority: 'desc' },
       { created_at: 'asc' }

@@ -5,6 +5,7 @@ const { generalLimiter, authLimiter, helmet } = require('./middlewares/security.
 const errorHandler = require('./middlewares/error.middleware')
 const path = require('path')
 const uploadRoutes = require('./routes/upload.routes')
+const compression = require('compression')
 dotenv.config()
 
 const app = express()
@@ -12,6 +13,7 @@ const app = express()
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }))
+app.use(compression()) // Comprimir respuestas para internet lento
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 app.use('/api', generalLimiter)

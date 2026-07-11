@@ -4,7 +4,7 @@ const prisma = require('../utils/prisma')
 
 const analyzeAndCreate = async (req, res) => {
   try {
-    const { description, reference_point, imageBase64, imageUrl } = req.body
+    const { description, reference_point, imageBase64, imageUrl, latitude, longitude } = req.body
 
     if (!description) {
       return res.status(400).json({ error: 'La descripción es requerida' })
@@ -37,7 +37,9 @@ const analyzeAndCreate = async (req, res) => {
       ai_priority: analysis.prioridad,
       ai_specialty: analysis.categoria,
       ai_report: analysis.reporte,
-      ai_difficulty: analysis.dificultad
+      ai_difficulty: analysis.dificultad,
+      latitude,
+      longitude
     })
 
     if (imageUrl) {

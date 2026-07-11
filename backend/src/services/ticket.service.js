@@ -53,7 +53,7 @@ const autoAssignTech = async (specialty, prisma) => {
 
 // Crear ticket ciudadano
 const createTicket = async (userId, data) => {
-  const { description, reference_point, ai_category, ai_priority, ai_specialty, ai_report, ai_difficulty } = data
+  const { description, reference_point, ai_category, ai_priority, ai_specialty, ai_report, ai_difficulty, latitude, longitude } = data
 
   const openTicket = await prisma.ticket.findFirst({
     where: {
@@ -95,8 +95,8 @@ const createTicket = async (userId, data) => {
           description,
           reference_point: reference_point || null,
           address: user.customer.address,
-          latitude: user.customer.latitude,
-          longitude: user.customer.longitude,
+          latitude: latitude || user.customer.latitude,
+          longitude: longitude || user.customer.longitude,
           status: initialStatus,
           priority: ai_priority || 'MEDIA',
           due_date,

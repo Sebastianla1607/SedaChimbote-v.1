@@ -81,6 +81,7 @@ const getClients = async (req, res) => {
   try {
     const clients = await prisma.user.findMany({
       where: { role: 'CLI_' },
+      take: 200, // Límite para evitar colapso de DOM y RAM con 10k+ clientes
       select: {
         id: true,
         first_name: true,
