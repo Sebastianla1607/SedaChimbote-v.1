@@ -52,6 +52,11 @@ export const AuthProvider = ({ children }) => {
     if (!user) return
     const newTheme = user.theme === 'light' ? 'dark' : 'light'
     
+    document.documentElement.classList.add('theme-transitioning')
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning')
+    }, 500)
+
     // Actualizar local optimista
     const updatedUser = { ...user, theme: newTheme }
     setUser(updatedUser)

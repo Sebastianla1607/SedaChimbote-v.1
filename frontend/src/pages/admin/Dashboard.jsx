@@ -254,7 +254,7 @@ export default function AdminDashboard() {
         {/* Toggle button */}
         <button
           onClick={() => setIsCollapsedState(!isCollapsedState)}
-          className="hidden md:flex absolute top-10 -right-3 w-6 h-6 bg-blue-600 hover:bg-blue-500 text-white rounded-full items-center justify-center border border-slate-900 shadow-lg cursor-pointer z-50 transition hover:scale-110 active:scale-95"
+          className="hidden md:flex absolute top-10 -right-3 w-6 h-6 bg-blue-600 hover:bg-blue-500 text-[#ffffff] rounded-full items-center justify-center border border-slate-900 shadow-lg cursor-pointer z-50 transition hover:scale-110 active:scale-95"
         >
           {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
         </button>
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
                 key={item.id}
                 onClick={() => { setTab(item.id); setIsSidebarOpen(false); setSearchTerm('') }}
                 title={isCollapsed ? item.label : undefined}
-                className={`flex items-center rounded-xl transition font-extrabold ${isCollapsed ? 'justify-center p-3 text-sm' : 'w-full gap-3 px-3 py-2.5 text-xs uppercase tracking-wider'} ${tab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'}`}
+                className={`flex items-center rounded-xl transition font-extrabold ${isCollapsed ? 'justify-center p-3 text-sm' : 'w-full gap-3 px-3 py-2.5 text-xs uppercase tracking-wider'} ${tab === item.id ? 'bg-blue-600 text-[#ffffff] shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'}`}
               >
                 {item.icon}
                 {!isCollapsed && <span className="animate-fade-in">{item.label}</span>}
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
             <button onClick={() => setShowNotifications(!showNotifications)} className="relative text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800/80 p-2.5 rounded-xl transition">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-605 text-white text-[9px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-lg">
+                <span className="absolute -top-1 -right-1 bg-rose-605 text-[#ffffff] text-[9px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-lg">
                   {unreadCount}
                 </span>
               )}
@@ -758,7 +758,7 @@ export default function AdminDashboard() {
                       <div key={i} className="relative flex-shrink-0 w-24 h-24 snap-start group">
                         <img src={ev.image_url} alt="Foto Reporte" className="w-full h-full object-cover rounded-xl border border-blue-800/50 group-hover:border-blue-500/80 transition-colors" />
                         {ev.type === 'AUSENCIA' && (
-                          <span className="absolute bottom-1.5 right-1.5 bg-rose-500/90 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md">Ausencia</span>
+                          <span className="absolute bottom-1.5 right-1.5 bg-rose-500/90 text-[#ffffff] text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md">Ausencia</span>
                         )}
                       </div>
                     ))}
@@ -856,7 +856,7 @@ export default function AdminDashboard() {
                       Cancelar
                     </button>
                     <button onClick={() => handleReject(selectedTicket.id)}
-                      className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-xl text-sm transition active:scale-[0.98]">
+                      className="flex-1 bg-rose-600 hover:bg-rose-500 text-[#ffffff] font-bold py-2 rounded-xl text-sm transition active:scale-[0.98]">
                       Confirmar Rechazo
                     </button>
                   </div>

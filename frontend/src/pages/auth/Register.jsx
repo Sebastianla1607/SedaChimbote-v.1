@@ -87,7 +87,7 @@ export default function Register() {
                   <div key={n} className="flex items-center gap-3">
                     {i > 0 && <div className="w-8 h-px bg-slate-800" />}
                     <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${step === n ? 'text-white' : 'text-slate-500'}`}>
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-extrabold ${step === n ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-950 border border-slate-800 text-slate-500'}`}>{n}</span>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-extrabold ${step === n ? 'bg-blue-600 text-[#ffffff] shadow-lg' : 'bg-slate-950 border border-slate-800 text-slate-500'}`}>{n}</span>
                       {label}
                     </div>
                   </div>
@@ -185,7 +185,7 @@ export default function Register() {
                       ← Atrás
                     </button>
                     <button type="submit" disabled={loading} className="btn-primary flex-1">
-                      {loading ? <Loader className="w-4 h-4 animate-spin mx-auto text-white" /> : 'Crear Cuenta'}
+                      {loading ? <Loader className="w-4 h-4 animate-spin mx-auto text-[#ffffff]" /> : 'Crear Cuenta'}
                     </button>
                   </div>
                 </form>

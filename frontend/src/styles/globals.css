@@ -20,6 +20,92 @@ body {
   background-color: #020617;
   color: #f1f5f9;
   overflow-x: hidden;
+  transition: filter 0.3s ease;
+}
+
+/* Transición suave al cambiar de tema */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition: background-color 500ms ease, color 500ms ease, border-color 500ms ease, box-shadow 500ms ease, fill 500ms ease, stroke 500ms ease !important;
+}
+
+html.light-theme body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+html.light-theme .bg-slate-950 { background-color: #f1f5f9 !important; }
+html.light-theme .bg-slate-900, html.light-theme .bg-slate-900\/60, html.light-theme .bg-slate-900\/50, html.light-theme .bg-slate-900\/95, html.light-theme .bg-slate-900\/85, html.light-theme .bg-slate-900\/90 { background-color: #ffffff !important; }
+html.light-theme .bg-slate-800, html.light-theme .bg-slate-800\/80, html.light-theme .bg-slate-800\/50 { background-color: #f8fafc !important; }
+html.light-theme .bg-slate-950\/40, html.light-theme .bg-slate-950\/50 { background-color: #f1f5f9 !important; }
+
+html.light-theme .text-slate-100, html.light-theme .text-white, html.light-theme .text-slate-200 { color: #0f172a !important; }
+html.light-theme .text-slate-300, html.light-theme .text-slate-400 { color: #475569 !important; }
+html.light-theme .text-slate-500 { color: #64748b !important; }
+
+html.light-theme .border-slate-900, html.light-theme .border-slate-900\/60 { border-color: #e2e8f0 !important; }
+html.light-theme .border-slate-800, html.light-theme .border-slate-800\/80, html.light-theme .border-slate-800\/50 { border-color: #e2e8f0 !important; }
+html.light-theme .border-slate-700, html.light-theme .border-slate-700\/50, html.light-theme .border-slate-700\/80 { border-color: #cbd5e1 !important; }
+
+html.light-theme .divide-slate-900 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e8f0 !important; }
+html.light-theme .divide-slate-800\/50 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e8f0 !important; }
+
+/* Invertir insignias, estados y textos de colores brillantes directamente con CSS seguro */
+html.light-theme [class*="text-emerald-"] { color: #047857 !important; }
+html.light-theme [class*="bg-emerald-950"] { background-color: #d1fae5 !important; }
+html.light-theme [class*="text-amber-"] { color: #b45309 !important; }
+html.light-theme [class*="bg-amber-950"] { background-color: #fef3c7 !important; }
+html.light-theme [class*="text-orange-"] { color: #c2410c !important; }
+html.light-theme [class*="bg-orange-950"] { background-color: #ffedd5 !important; }
+html.light-theme [class*="text-rose-"] { color: #be123c !important; }
+html.light-theme [class*="bg-rose-950"] { background-color: #ffe4e6 !important; }
+html.light-theme [class*="text-sky-"] { color: #0369a1 !important; }
+html.light-theme [class*="bg-sky-950"] { background-color: #e0f2fe !important; }
+html.light-theme [class*="text-indigo-"] { color: #4338ca !important; }
+html.light-theme [class*="bg-indigo-950"] { background-color: #e0e7ff !important; }
+html.light-theme [class*="text-purple-"] { color: #7e22ce !important; }
+html.light-theme [class*="bg-purple-950"] { background-color: #f3e8ff !important; }
+html.light-theme [class*="text-teal-"] { color: #0f766e !important; }
+html.light-theme [class*="bg-teal-950"] { background-color: #ccfbf1 !important; }
+html.light-theme [class*="text-blue-"] { color: #1d4ed8 !important; }
+html.light-theme [class*="bg-blue-950"] { background-color: #dbeafe !important; }
+html.light-theme [class*="text-cyan-"] { color: #0e7490 !important; }
+html.light-theme [class*="bg-cyan-950"] { background-color: #cffafe !important; }
+
+/* Evitar que el botón primario (que ya está bien contrastado) se invierta y se vuelva oscuro o pálido */
+html.light-theme .btn-primary {
+  filter: none !important;
+}
+
+/* Sombras claras */
+html.light-theme .card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+html.light-theme .card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Recharts Tooltips y Cursores (Gráficos) para Modo Claro */
+html.light-theme .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light-theme .recharts-tooltip-label {
+  color: #0f172a !important;
+  font-weight: bold;
+}
+
+html.light-theme .recharts-tooltip-item-name,
+html.light-theme .recharts-tooltip-item-value {
+  color: #334155 !important;
+}
+
+html.light-theme .recharts-rectangle.recharts-tooltip-cursor {
+  fill: #f8fafc !important;
 }
 
 /* Scrollbar personalizado */
@@ -82,11 +168,18 @@ body {
   width: 100%;
 }
 
+html.light-theme .mobile-container {
+  background: #f1f5f9 !important;
+}
+
 @media (max-width: 767px) {
   .mobile-container {
     max-width: var(--max-mobile);
     margin: 0 auto;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  }
+  html.light-theme .mobile-container {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   }
 }
 

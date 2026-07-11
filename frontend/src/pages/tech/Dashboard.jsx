@@ -129,7 +129,7 @@ export default function TechDashboard() {
             }} className="hidden md:flex relative text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800/80 p-2.5 rounded-xl transition">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-lg">
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-[#ffffff] text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-lg">
                   {unreadCount}
                 </span>
               )}
