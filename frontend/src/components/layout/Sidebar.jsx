@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Home, Ticket, User, LogOut, Plus, UserPlus, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react'
+import { Home, Ticket, User, LogOut, Plus, UserPlus, ChevronLeft, ChevronRight, BarChart3, Moon, Sun } from 'lucide-react'
 import Logo from '../ui/Logo'
 
 const menuItems = {
@@ -27,7 +27,7 @@ const menuItems = {
 }
 
 export default function Sidebar() {
-  const { user, logout } = useAuth()
+  const { user, logout, toggleTheme } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isCollapsed, setIsCollapsed] = useState(
@@ -112,6 +112,20 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          title={isCollapsed ? (user.theme === 'light' ? 'Modo Oscuro' : 'Modo Claro') : undefined}
+          className={`flex items-center justify-center mb-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition duration-200 border border-slate-700/50 ${
+            isCollapsed 
+              ? 'p-2.5 rounded-xl w-full' 
+              : 'w-full gap-2 text-xs font-semibold py-2.5 px-4 rounded-xl'
+          }`}
+        >
+          {user.theme === 'light' ? <Moon className="w-4 h-4 flex-shrink-0" /> : <Sun className="w-4 h-4 flex-shrink-0" />}
+          {!isCollapsed && <span className="animate-fade-in">{user.theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}</span>}
+        </button>
 
         {/* Logout Button */}
         <button

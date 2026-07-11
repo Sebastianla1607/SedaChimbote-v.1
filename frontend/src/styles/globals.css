@@ -258,3 +258,106 @@ body {
     margin-left: 5rem !important;
   }
 }
+
+/* ========================================================================= */
+/* TEMA CLARO (LIGHT THEME) OVERRIDES */
+/* ========================================================================= */
+
+.light-theme {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.light-theme body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Fondos */
+.light-theme .bg-slate-950,
+.light-theme .bg-slate-950\/40,
+.light-theme .bg-slate-950\/60 { 
+  background-color: #f1f5f9 !important; 
+}
+.light-theme .bg-slate-900 { 
+  background-color: #ffffff !important; 
+}
+.light-theme .bg-slate-900\/40 { 
+  background-color: rgba(255, 255, 255, 0.7) !important; 
+}
+.light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-900\/85,
+.light-theme .bg-slate-900\/95 { 
+  background-color: rgba(255, 255, 255, 0.9) !important; 
+}
+.light-theme .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+}
+
+/* Textos */
+.light-theme .text-white { color: #0f172a !important; }
+.light-theme .text-slate-100, .light-theme .text-slate-200 { color: #1e293b !important; }
+.light-theme .text-slate-300 { color: #334155 !important; }
+.light-theme .text-slate-400 { color: #64748b !important; }
+.light-theme .text-slate-500 { color: #64748b !important; }
+
+/* Bordes */
+.light-theme .border-slate-900,
+.light-theme .border-slate-900\/60 { 
+  border-color: #e2e8f0 !important; 
+}
+.light-theme .border-slate-800,
+.light-theme .border-slate-800\/80,
+.light-theme .border-slate-800\/40 { 
+  border-color: #cbd5e1 !important; 
+}
+.light-theme .border-slate-700,
+.light-theme .border-slate-700\/50 {
+  border-color: #cbd5e1 !important;
+}
+.light-theme .divide-slate-900 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+/* Componentes Específicos */
+.light-theme .card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(203, 213, 225, 0.6) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+.light-theme .card:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08) !important;
+}
+.light-theme .mobile-container {
+  background: radial-gradient(circle at top, #ffffff 0%, #f1f5f9 100%) !important;
+}
+.light-theme .input-base {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.light-theme .input-base:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+.light-theme .input-base::placeholder {
+  color: #94a3b8 !important;
+}
+.light-theme .btn-secondary {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+.light-theme .btn-secondary:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Hovers de tablas/listas */
+.light-theme .hover\:bg-slate-900\/20:hover {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+.light-theme .hover\:bg-slate-900\/60:hover {
+  background-color: #e2e8f0 !important;
+}

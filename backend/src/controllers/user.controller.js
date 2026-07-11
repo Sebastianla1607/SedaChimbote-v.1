@@ -1,4 +1,5 @@
 const { createEmployee, getEmployees, deactivateEmployee } = require('../services/user.service')
+const prisma = require('../utils/prisma')
 
 const create = async (req, res) => {
   try {
@@ -38,4 +39,18 @@ const deactivate = async (req, res) => {
   }
 }
 
-module.exports = { create, list, deactivate }
+const updateTheme = async (req, res) => {
+  try {
+    const { theme } = req.body
+    if (!['light', 'dark'].includes(theme)) return res.status(400).json({ error: 'Tema inválido' })
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { theme }
+    })
+    res.json({ message: 'Tema actualizado', theme: user.theme })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+module.exports = { create, list, deactivate, updateTheme }

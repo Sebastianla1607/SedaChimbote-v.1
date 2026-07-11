@@ -102,6 +102,7 @@ const register = async (req, res) => {
         first_name: user.first_name,
         email: user.email,
         supply_code: supply_code,
+        theme: user.theme
       },
     });
   } catch (error) {
@@ -153,6 +154,7 @@ const login = async (req, res) => {
         access_code: user.access_code || null,
         email: user.email || null,
         supply_code: user.customer?.supply_code || null,
+        theme: user.theme
       },
     });
   } catch (error) {

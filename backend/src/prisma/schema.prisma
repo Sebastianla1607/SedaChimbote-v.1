@@ -97,6 +97,7 @@ model User {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
   monthly_quota   Int      @default(200)
+  theme           String   @default("dark")
 
   customer_id     Int?     @unique
   customer        Customer? @relation(fields: [customer_id], references: [id])

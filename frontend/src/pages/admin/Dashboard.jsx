@@ -4,14 +4,14 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
 import {
   Bell, Plus, Users, Ticket, AlertTriangle, CheckCircle,
-  Clock, Eye, UserPlus, X, Loader, ChevronRight, ChevronLeft, LogOut, BarChart3
+  Clock, Eye, UserPlus, X, Loader, ChevronRight, ChevronLeft, LogOut, BarChart3, Moon, Sun
 } from 'lucide-react'
 import Logo from '../../components/ui/Logo'
 import { PriorityBadge, StatusBadge, priorityConfig } from '../../components/ui/StatusBadge'
 import StatsTab from '../../components/admin/StatsTab'
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth()
+  const { user, logout, toggleTheme } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState(user?.role === 'JEF_' ? 'stats' : 'tickets')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -195,10 +195,24 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            title={isCollapsed ? (user.theme === 'light' ? 'Modo Oscuro' : 'Modo Claro') : undefined}
+            className={`flex items-center justify-center mb-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition duration-200 border border-slate-700/50 ${
+              isCollapsed 
+                ? 'p-2 rounded-xl w-full' 
+                : 'w-full gap-2 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-xl'
+            }`}
+          >
+            {user?.theme === 'light' ? <Moon className="w-4 h-4 flex-shrink-0" /> : <Sun className="w-4 h-4 flex-shrink-0" />}
+            {!isCollapsed && <span className="animate-fade-in">{user?.theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}</span>}
+          </button>
+          
           <button
             onClick={logout}
             title={isCollapsed ? 'Cerrar sesión' : undefined}
-            className={`text-slate-500 hover:text-rose-455 border border-slate-800 rounded-xl hover:bg-rose-500/5 transition flex items-center justify-center ${isCollapsed ? 'p-2' : 'w-full text-[10px] font-bold uppercase tracking-wider py-1.5'}`}
+            className={`text-slate-500 hover:text-rose-455 border border-slate-800 rounded-xl hover:bg-rose-500/5 transition flex items-center justify-center ${isCollapsed ? 'p-2 w-full' : 'w-full text-[10px] font-bold uppercase tracking-wider py-1.5'}`}
           >
             {isCollapsed ? <LogOut className="w-4 h-4" /> : 'Cerrar sesión'}
           </button>
