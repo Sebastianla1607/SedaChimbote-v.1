@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma')
+const { emitToRole, emitToUser } = require('../socket')
 
 // Generar código único de ticket REC-YYYYMMDD-XXXX
 const generateTicketCode = async () => {
@@ -150,7 +151,18 @@ const createTicket = async (userId, data) => {
         message: `Nuevo ticket asignado automáticamente: ${ticket.code}`
       }
     })
+
+    // Emitir notificación al técnico vía Socket
+    emitToUser(assigned_esp_id, 'new_notification', {
+      title: 'Nuevo Ticket',
+      message: `Se te ha asignado automáticamente el ticket ${ticket.code}`,
+      ticket_id: ticket.id
+    })
   }
+
+  // Emitir a todos los administradores y jefes que se creó un nuevo ticket
+  emitToRole('ADM_', 'ticket_created', ticket)
+  emitToRole('JEF_', 'ticket_created', ticket)
 
   return ticket
 }

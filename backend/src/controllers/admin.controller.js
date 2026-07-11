@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma')
 const { getAllTickets, createInternalTicket, assignTicket, approveClose, rejectClose } = require('../services/admin.service')
+const bcrypt = require('bcryptjs')
 
 const listTickets = async (req, res) => {
   try {
@@ -110,4 +111,51 @@ const getClients = async (req, res) => {
   }
 }
 
-module.exports = { listTickets, createInternal, assign, approve, reject, getHistory, getClients }
+const listAdmins = async (req, res) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADM_' },
+      select: {
+        id: true,
+        access_code: true,
+        first_name: true,
+        last_name_pat: true,
+        last_name_mat: true,
+        phone: true,
+        is_active: true,
+        created_at: true
+      },
+      orderBy: { created_at: 'desc' }
+    })
+    res.json({ admins })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+const createAdmin = async (req, res) => {
+  try {
+    const { first_name, last_name_pat, last_name_mat, phone, password } = req.body
+    
+    const count = await prisma.user.count({ where: { role: 'ADM_' } })
+    const access_code = `ADM${String(count + 1).padStart(3, '0')}`
+    
+    const admin = await prisma.user.create({
+      data: {
+        role: 'ADM_',
+        access_code,
+        first_name,
+        last_name_pat,
+        last_name_mat,
+        phone,
+        password_hash: await bcrypt.hash(password || '123456', 10)
+      }
+    })
+    
+    res.status(201).json({ message: 'Administrador creado', admin: { access_code, first_name } })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+}
+
+module.exports = { listTickets, createInternal, assign, approve, reject, getHistory, getClients, listAdmins, createAdmin }

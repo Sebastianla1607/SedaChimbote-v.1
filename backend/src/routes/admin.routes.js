@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { listTickets, createInternal, assign, approve, reject, getHistory, getClients } = require('../controllers/admin.controller')
+const { listTickets, createInternal, assign, approve, reject, getHistory, getClients, listAdmins, createAdmin } = require('../controllers/admin.controller')
 const { verifyToken, authorizeRoles } = require('../middlewares/auth.middleware')
 
 router.get('/tickets', verifyToken, authorizeRoles('ADM_', 'JEF_'), listTickets)
@@ -10,5 +10,7 @@ router.patch('/tickets/:id/approve', verifyToken, authorizeRoles('ADM_', 'JEF_')
 router.patch('/tickets/:id/reject', verifyToken, authorizeRoles('ADM_', 'JEF_'), reject)
 router.get('/tickets/:id/history', verifyToken, authorizeRoles('ADM_', 'JEF_'), getHistory)
 router.get('/clients', verifyToken, authorizeRoles('ADM_', 'JEF_'), getClients)
+router.get('/admins', verifyToken, authorizeRoles('JEF_'), listAdmins)
+router.post('/admins', verifyToken, authorizeRoles('JEF_'), createAdmin)
 
 module.exports = router

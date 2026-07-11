@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../services/api'
+import { initSocket, disconnectSocket } from '../services/socket'
 
 const AuthContext = createContext()
 
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     if (savedToken && savedUser) {
       setToken(savedToken)
       setUser(JSON.parse(savedUser))
+      initSocket(savedToken)
     }
     setLoading(false)
   }, [])
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }) => {
     setToken(userToken)
     localStorage.setItem('token', userToken)
     localStorage.setItem('user', JSON.stringify(userData))
+    initSocket(userToken)
   }
 
   const logout = () => {
@@ -42,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     document.documentElement.classList.remove('light-theme')
+    disconnectSocket()
   }
 
   const toggleTheme = async () => {

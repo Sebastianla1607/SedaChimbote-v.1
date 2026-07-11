@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma')
+const { emitToRole, emitToUser } = require('../socket')
 
 // Listar todos los tickets con filtros
 const getAllTickets = async (filters = {}) => {
@@ -113,7 +114,16 @@ const createInternalTicket = async (adminId, data) => {
         message: `Tienes un nuevo ticket asignado: ${ticket.code}`
       }
     })
+    
+    emitToUser(assigned_esp_id, 'new_notification', {
+      title: 'Nuevo Ticket',
+      message: `Tienes un nuevo ticket asignado: ${ticket.code}`,
+      ticket_id: ticket.id
+    })
   }
+
+  emitToRole('ADM_', 'ticket_created', ticket)
+  emitToRole('JEF_', 'ticket_created', ticket)
 
   return ticket
 }
@@ -156,6 +166,15 @@ const assignTicket = async (adminId, ticketId, espId) => {
       message: `Se te ha asignado el ticket ${ticket.code}`
     }
   })
+  
+  emitToUser(espId, 'new_notification', {
+    title: 'Ticket Asignado',
+    message: `Se te ha asignado el ticket ${ticket.code}`,
+    ticket_id: ticketId
+  })
+  
+  emitToRole('ADM_', 'ticket_updated', updated)
+  emitToRole('JEF_', 'ticket_updated', updated)
 
   return updated
 }
@@ -194,6 +213,15 @@ const approveClose = async (adminId, ticketId) => {
       message: `Tu reclamo ${ticket.code} ha sido cerrado exitosamente`
     }
   })
+  
+  emitToUser(ticket.created_by_id, 'new_notification', {
+    title: 'Ticket Cerrado',
+    message: `Tu reclamo ${ticket.code} ha sido cerrado exitosamente`,
+    ticket_id: ticketId
+  })
+  
+  emitToRole('ADM_', 'ticket_updated', updated)
+  emitToRole('JEF_', 'ticket_updated', updated)
 
   return updated
 }
@@ -230,6 +258,15 @@ const rejectClose = async (adminId, ticketId, note) => {
       message: `Tu reporte del ticket ${ticket.code} fue rechazado: ${note}`
     }
   })
+  
+  emitToUser(ticket.assigned_esp_id, 'new_notification', {
+    title: 'Reporte Rechazado',
+    message: `Tu reporte del ticket ${ticket.code} fue rechazado: ${note}`,
+    ticket_id: ticketId
+  })
+  
+  emitToRole('ADM_', 'ticket_updated', updated)
+  emitToRole('JEF_', 'ticket_updated', updated)
 
   return updated
 }

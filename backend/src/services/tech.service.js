@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma')
+const { emitToRole, emitToUser } = require('../socket')
 
 const getTechTickets = async (techId) => {
   const tickets = await prisma.ticket.findMany({
@@ -59,6 +60,9 @@ const startRoute = async (techId, ticketId) => {
         note: 'Ticket interno — técnico en camino directo a la ubicación'
       }
     })
+    
+    emitToRole('ADM_', 'ticket_updated', updated)
+    emitToRole('JEF_', 'ticket_updated', updated)
 
     return { message: 'Ticket interno aceptado, dirígete a la ubicación', ticket: updated, origin: 'INTERNO' }
   }
@@ -82,6 +86,17 @@ const startRoute = async (techId, ticketId) => {
       message: `El técnico ${tech.access_code} ha aceptado tu reclamo ${ticket.code}. ¿Estás en casa?`
     }
   })
+  
+  emitToUser(ticket.created_by_id, 'new_notification', {
+    title: 'Técnico Asignado',
+    message: `El técnico ${tech.access_code} ha aceptado tu reclamo ${ticket.code}. ¿Estás en casa?`,
+    ticket_id: ticketId
+  })
+  
+  // Notice: no we do not change state to EN_CAMINO yet for ciudadanos, but we can emit update
+  const updatedTicket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  emitToRole('ADM_', 'ticket_updated', updatedTicket)
+  emitToRole('JEF_', 'ticket_updated', updatedTicket)
 
   return { message: 'Ticket aceptado, esperando confirmación del cliente', origin: 'CIUDADANO' }
 }
@@ -117,6 +132,15 @@ const goToLocation = async (techId, ticketId) => {
       message: `El técnico está en camino a tu vivienda para atender tu reclamo ${ticket.code}`
     }
   })
+  
+  emitToUser(ticket.created_by_id, 'new_notification', {
+    title: 'Técnico en Camino',
+    message: `El técnico está en camino a tu vivienda para atender tu reclamo ${ticket.code}`,
+    ticket_id: ticketId
+  })
+  
+  emitToRole('ADM_', 'ticket_updated', updated)
+  emitToRole('JEF_', 'ticket_updated', updated)
 
   return updated
 }
@@ -148,7 +172,17 @@ const arrivedAtLocation = async (techId, ticketId) => {
         message: `El técnico está afuera de tu vivienda. Por favor, acércate a atenderlo.`
       }
     })
+    
+    emitToUser(ticket.created_by_id, 'new_notification', {
+      title: 'Técnico Afuera',
+      message: `El técnico está afuera de tu vivienda. Por favor, acércate a atenderlo.`,
+      ticket_id: ticketId
+    })
   }
+  
+  const updatedTicket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  emitToRole('ADM_', 'ticket_updated', updatedTicket)
+  emitToRole('JEF_', 'ticket_updated', updatedTicket)
 
   return { message: ticket.origin === 'INTERNO' ? 'Llegaste a la ubicación' : 'Cliente notificado, esperando que abra la puerta' }
 }
@@ -192,6 +226,10 @@ const clientAbsent = async (techId, ticketId, data) => {
     where: { id: techId },
     data: { is_wip_locked: false }
   })
+  
+  const updatedTicket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  emitToRole('ADM_', 'ticket_updated', updatedTicket)
+  emitToRole('JEF_', 'ticket_updated', updatedTicket)
 
   return { message: 'Ticket marcado como observado, puedes tomar otro ticket' }
 }
@@ -220,6 +258,9 @@ const startExecution = async (techId, ticketId) => {
         : 'Cliente abrió la puerta, técnico inició ejecución'
     }
   })
+  
+  emitToRole('ADM_', 'ticket_updated', updated)
+  emitToRole('JEF_', 'ticket_updated', updated)
 
   return updated
 }
@@ -297,6 +338,18 @@ const submitTechReport = async (techId, ticketId, data) => {
       message: `El ticket ${ticket.code} está listo para revisión de cierre`
     }))
   })
+  
+  admins.forEach(admin => {
+    emitToUser(admin.id, 'new_notification', {
+      title: 'Ticket para Revisión',
+      message: `El ticket ${ticket.code} está listo para revisión de cierre`,
+      ticket_id: ticketId
+    })
+  })
+  
+  const updatedTicket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  emitToRole('ADM_', 'ticket_updated', updatedTicket)
+  emitToRole('JEF_', 'ticket_updated', updatedTicket)
 
   return { message: 'Reporte enviado, ticket en espera de aprobación' }
 }

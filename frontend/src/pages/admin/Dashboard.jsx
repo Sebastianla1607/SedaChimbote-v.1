@@ -6,9 +6,11 @@ import {
   Bell, Plus, Users, Ticket, AlertTriangle, CheckCircle,
   Clock, Eye, UserPlus, X, Loader, ChevronRight, ChevronLeft, LogOut, BarChart3, Moon, Sun
 } from 'lucide-react'
+import { getSocket } from '../../services/socket'
 import Logo from '../../components/ui/Logo'
 import { PriorityBadge, StatusBadge, priorityConfig } from '../../components/ui/StatusBadge'
 import StatsTab from '../../components/admin/StatsTab'
+import CustomSelect from '../../components/ui/CustomSelect'
 
 export default function AdminDashboard() {
   const { user, logout, toggleTheme } = useAuth()
@@ -48,10 +50,54 @@ export default function AdminDashboard() {
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [ticketHistory, setTicketHistory] = useState(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
-  const [techSearch, setTechSearch] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
   const [assigningTicketId, setAssigningTicketId] = useState(null)
   const [rejectNote, setRejectNote] = useState('')
   const [showRejectForm, setShowRejectForm] = useState(false)
+  const [admins, setAdmins] = useState([])
+  const [showTechModal, setShowTechModal] = useState(false)
+  const [showAdminModal, setShowAdminModal] = useState(false)
+  const [techForm, setTechForm] = useState({ first_name: '', last_name_pat: '', last_name_mat: '', phone: '', specialties: [] })
+  const [adminForm, setAdminForm] = useState({ first_name: '', last_name_pat: '', last_name_mat: '', phone: '', password: '' })
+  
+  // Paginación
+  const [ticketsPage, setTicketsPage] = useState(1)
+  const [clientsPage, setClientsPage] = useState(1)
+  const [adminsPage, setAdminsPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
+
+  // Socket.io integration
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+
+    const handleTicketCreated = (newTicket) => {
+      setTickets(prev => [newTicket, ...prev])
+    }
+
+    const handleTicketUpdated = (updatedTicket) => {
+      setTickets(prev => prev.map(t => t.id === updatedTicket.id ? { ...t, ...updatedTicket } : t))
+      if (selectedTicket && selectedTicket.id === updatedTicket.id) {
+        setSelectedTicket(prev => ({ ...prev, ...updatedTicket }))
+        fetchHistory(updatedTicket.id)
+      }
+    }
+
+    const handleNewNotification = (notification) => {
+      setNotifications(prev => [notification, ...prev])
+      setUnreadCount(count => count + 1)
+    }
+
+    socket.on('ticket_created', handleTicketCreated)
+    socket.on('ticket_updated', handleTicketUpdated)
+    socket.on('new_notification', handleNewNotification)
+
+    return () => {
+      socket.off('ticket_created', handleTicketCreated)
+      socket.off('ticket_updated', handleTicketUpdated)
+      socket.off('new_notification', handleNewNotification)
+    }
+  }, [selectedTicket])
 
   useEffect(() => { fetchAll() }, [])
 
@@ -59,19 +105,39 @@ export default function AdminDashboard() {
     try {
       const [ticketsRes, techsRes, clientsRes, notifsRes] = await Promise.all([
         api.get('/admin/tickets'),
-        api.get('/users?role=ESP_'),
+        user?.role === 'ADM_' ? api.get('/users?role=ESP_') : Promise.resolve({ data: { users: [] } }),
         api.get('/admin/clients'),
         api.get('/notifications')
       ])
+      
+      let adminsRes = { data: { admins: [] } }
+      if (user?.role === 'JEF_') {
+        adminsRes = await api.get('/admin/admins')
+      }
+
       setTickets(ticketsRes.data.tickets)
-      setTechs(techsRes.data.users)
+      if (user?.role === 'ADM_') setTechs(techsRes.data.users)
       setClients(clientsRes.data.clients)
+      if (user?.role === 'JEF_') setAdmins(adminsRes.data.admins)
       setNotifications(notifsRes.data.notifications)
       setUnreadCount(notifsRes.data.notifications.filter(n => !n.is_read).length)
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const createAdmin = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await api.post('/admin/admins', adminForm)
+      alert(`Admin creado. Código: ${res.data.admin.access_code}, Contraseña: 123456`)
+      setShowAdminModal(false)
+      setAdminForm({ first_name: '', last_name_pat: '', last_name_mat: '', phone: '', password: '' })
+      fetchAll()
+    } catch (error) {
+      alert(error.response?.data?.error || 'Error al crear admin')
     }
   }
 
@@ -103,11 +169,33 @@ export default function AdminDashboard() {
     } catch (err) { alert(err.response?.data?.error || 'Error al rechazar') }
   }
 
-  const filteredTickets = tickets.filter(t => {
-    if (filterStatus && t.status !== filterStatus) return false
-    if (filterPriority && t.priority !== filterPriority) return false
-    return true
-  })
+  const sortedTickets = [...tickets]
+    .filter(t => {
+      if (filterStatus && t.status !== filterStatus) return false
+      if (filterPriority && t.priority !== filterPriority) return false
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
+        if (!t.code?.toLowerCase().includes(q) &&
+            !t.description?.toLowerCase().includes(q) &&
+            !t.assigned_esp?.first_name?.toLowerCase().includes(q) &&
+            !t.customer?.first_name?.toLowerCase().includes(q)) {
+          return false
+        }
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (a.status === 'PRE_CERRADO' && b.status !== 'PRE_CERRADO') return -1
+      if (b.status === 'PRE_CERRADO' && a.status !== 'PRE_CERRADO') return 1
+      const prioWeight = { 'EXTREMA': 4, 'ALTA': 3, 'MEDIA': 2, 'BAJA': 1 }
+      if (prioWeight[a.priority] !== prioWeight[b.priority]) {
+        return prioWeight[b.priority] - prioWeight[a.priority]
+      }
+      return new Date(b.created_at) - new Date(a.created_at)
+    })
+
+  const totalTicketPages = Math.ceil(sortedTickets.length / ITEMS_PER_PAGE)
+  const currentTickets = sortedTickets.slice((ticketsPage - 1) * ITEMS_PER_PAGE, ticketsPage * ITEMS_PER_PAGE)
 
   const stats = {
     active: tickets.filter(t => t.status !== 'CERRADO').length,
@@ -119,6 +207,7 @@ export default function AdminDashboard() {
   const navItems = [
     { id: 'tickets', label: 'Tickets', icon: <Ticket className="w-4 h-4" /> },
     { id: 'techs', label: 'Técnicos', icon: <Users className="w-4 h-4" /> },
+    { id: 'admins', label: 'Administradores', icon: <Users className="w-4 h-4" /> },
     { id: 'clients', label: 'Clientes', icon: <Users className="w-4 h-4" /> },
   ]
 
@@ -128,11 +217,24 @@ export default function AdminDashboard() {
 
   const filteredTechs = techs.filter(t =>
     t.is_active && (
-      techSearch === '' ||
-      t.access_code?.toLowerCase().includes(techSearch.toLowerCase()) ||
-      t.first_name?.toLowerCase().includes(techSearch.toLowerCase()) ||
-      t.last_name_pat?.toLowerCase().includes(techSearch.toLowerCase())
+      searchTerm === '' ||
+      t.access_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.last_name_pat?.toLowerCase().includes(searchTerm.toLowerCase())
     )
+  )
+
+  const filteredClients = clients.filter(c => 
+    searchTerm === '' ||
+    c.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.last_name_pat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredAdmins = admins.filter(a => 
+    searchTerm === '' ||
+    a.access_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.first_name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -170,17 +272,21 @@ export default function AdminDashboard() {
         </div>
 
         <nav className={`flex-1 py-4 space-y-1.5 z-10 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-3'}`}>
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => { setTab(item.id); setIsSidebarOpen(false) }}
-              title={isCollapsed ? item.label : undefined}
-              className={`flex items-center rounded-xl transition font-extrabold ${isCollapsed ? 'justify-center p-3 text-sm' : 'w-full gap-3 px-3 py-2.5 text-xs uppercase tracking-wider'} ${tab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'}`}
-            >
-              {item.icon}
-              {!isCollapsed && <span className="animate-fade-in">{item.label}</span>}
-            </button>
-          ))}
+          {navItems.map(item => {
+            if (item.id === 'techs' && user?.role === 'JEF_') return null
+            if (item.id === 'admins' && user?.role === 'ADM_') return null
+            return (
+              <button
+                key={item.id}
+                onClick={() => { setTab(item.id); setIsSidebarOpen(false); setSearchTerm('') }}
+                title={isCollapsed ? item.label : undefined}
+                className={`flex items-center rounded-xl transition font-extrabold ${isCollapsed ? 'justify-center p-3 text-sm' : 'w-full gap-3 px-3 py-2.5 text-xs uppercase tracking-wider'} ${tab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'}`}
+              >
+                {item.icon}
+                {!isCollapsed && <span className="animate-fade-in">{item.label}</span>}
+              </button>
+            )
+          })}
         </nav>
 
         <div className={`py-4 border-t border-slate-800/80 z-10 transition-all duration-300 ${isCollapsed ? 'px-2 flex flex-col items-center gap-4' : 'px-3'}`}>
@@ -235,12 +341,31 @@ export default function AdminDashboard() {
                 {tab === 'stats' && 'Dashboard Gerencial'}
                 {tab === 'tickets' && 'Dashboard Operativo Central'}
                 {tab === 'techs' && 'Gestión de Técnicos'}
+                {tab === 'admins' && 'Administradores'}
                 {tab === 'clients' && 'Clientes Registrados'}
               </h1>
               <p className="text-slate-400 text-xs font-semibold">Vista en tiempo real de operaciones</p>
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
+
+            {tab !== 'stats' && (
+              <div className="flex relative">
+                <input 
+                  type="text" 
+                  value={searchTerm} 
+                  onChange={(e) => { setSearchTerm(e.target.value); setTicketsPage(1); setClientsPage(1); setAdminsPage(1) }} 
+                  placeholder={"Buscar " + tab + "..."}
+                  className="bg-slate-900/60 border border-slate-700/50 rounded-full px-4 py-1.5 md:py-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-32 md:w-64 shadow-inner placeholder:text-slate-500 transition-all focus:w-40 md:focus:w-80"
+                />
+                {(searchTerm) && (
+                  <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
             {tab === 'tickets' && (
               <button onClick={() => navigate('/admin/new-ticket')}
                 className="btn-primary py-2 px-3 text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2">
@@ -264,10 +389,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Notificaciones */}
+        {/* Notificaciones (Pop-up) */}
         {showNotifications && (
-          <div className="absolute top-18 right-2 sm:right-6 w-[calc(100vw-1rem)] max-w-sm sm:w-80 bg-slate-900/95 border border-slate-800/80 rounded-2xl shadow-2xl z-50 backdrop-blur-md">
-            <div className="px-4 py-3.5 border-b border-slate-800/80 flex items-center justify-between">
+          <div className="absolute right-4 top-20 w-80 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.6)] z-[9999] overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
               <span className="font-bold text-slate-100 text-sm">Notificaciones</span>
               <button onClick={() => setShowNotifications(false)}>
                 <X className="w-4 h-4 text-slate-500 hover:text-slate-300" />
@@ -325,25 +450,32 @@ export default function AdminDashboard() {
               </div>
 
               {/* Filtros */}
-              <div className="card flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="card flex flex-col sm:flex-row sm:items-center gap-3 relative z-[100]">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Filtros:</span>
-                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-slate-900/85 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Todos los estados</option>
-                  {['PENDIENTE','ASIGNADO','EN_CAMINO','EJECUCION_ACTIVA','PRE_CERRADO','OBSERVADO','CERRADO'].map(s => (
-                    <option key={s} value={s}>{s.replace('_', ' ')}</option>
-                  ))}
-                </select>
-                <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}
-                  className="bg-slate-900/85 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Todas las prioridades</option>
-                  {['BAJA','MEDIA','ALTA','EXTREMA'].map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+                
+                <CustomSelect 
+                  value={filterStatus}
+                  onChange={(val) => { setFilterStatus(val); setTicketsPage(1) }}
+                  icon="🎯"
+                  placeholder="Todos los estados"
+                  options={['PENDIENTE','ASIGNADO','EN_CAMINO','EJECUCION_ACTIVA','PRE_CERRADO','OBSERVADO','CERRADO'].map(s => ({
+                    value: s, label: s.replace('_', ' ')
+                  }))}
+                />
+
+                <CustomSelect 
+                  value={filterPriority}
+                  onChange={(val) => { setFilterPriority(val); setTicketsPage(1) }}
+                  icon="⚡"
+                  placeholder="Todas las prioridades"
+                  options={['BAJA','MEDIA','ALTA','EXTREMA'].map(p => ({
+                    value: p, label: p
+                  }))}
+                />
+
                 {(filterStatus || filterPriority) && (
-                  <button onClick={() => { setFilterStatus(''); setFilterPriority('') }}
-                    className="text-xs text-rose-500 font-bold hover:underline">
+                  <button onClick={() => { setFilterStatus(''); setFilterPriority(''); setTicketsPage(1) }}
+                    className="text-xs text-rose-500 font-bold hover:underline px-2">
                     Limpiar Filtros
                   </button>
                 )}
@@ -361,10 +493,10 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-900">
                     {loading ? (
-                      <tr><td colSpan={8} className="text-center py-8"><Loader className="w-6 h-6 animate-spin mx-auto text-blue-500" /></td></tr>
-                    ) : filteredTickets.length === 0 ? (
-                      <tr><td colSpan={8} className="text-center py-8 text-slate-500 text-sm font-semibold">No se encontraron tickets registrados</td></tr>
-                    ) : filteredTickets.map(ticket => (
+                      <tr><td colSpan="8" className="text-center py-12"><Loader className="w-8 h-8 text-blue-500 animate-spin mx-auto" /></td></tr>
+                    ) : currentTickets.length === 0 ? (
+                      <tr><td colSpan="8" className="text-center py-12 text-slate-500">No hay tickets.</td></tr>
+                    ) : currentTickets.map(ticket => (
                       <tr key={ticket.id} className={`hover:bg-slate-900/20 transition border-l-4 ${priorityConfig[ticket.priority]?.border} ${ticket.priority === 'EXTREMA' ? 'bg-rose-500/5' : ''}`}>
                         <td className="px-4 py-3"><span className="text-xs font-mono font-bold text-blue-400">#{ticket.code}</span></td>
                         <td className="px-4 py-3"><span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{ticket.origin === 'CIUDADANO' ? '📱 App' : '🏢 Interno'}</span></td>
@@ -382,20 +514,38 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+
+                {/* Paginación Tickets */}
+                {totalTicketPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 px-4 py-2 border-t border-slate-800/80">
+                    <p className="text-xs text-slate-500 font-medium">Mostrando {(ticketsPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(ticketsPage * ITEMS_PER_PAGE, sortedTickets.length)} de {sortedTickets.length}</p>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setTicketsPage(p => Math.max(1, p - 1))} disabled={ticketsPage === 1}
+                        className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-50 hover:bg-slate-800 hover:text-white transition">
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs font-bold text-white px-2">{ticketsPage} / {totalTicketPages}</span>
+                      <button onClick={() => setTicketsPage(p => Math.min(totalTicketPages, p + 1))} disabled={ticketsPage === totalTicketPages}
+                        className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-50 hover:bg-slate-800 hover:text-white transition">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* TAB TÉCNICOS */}
-          {tab === 'techs' && (
+          {tab === 'techs' && user?.role === 'ADM_' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {loading ? (
                 <div className="col-span-full flex justify-center py-8">
                   <Loader className="w-6 h-6 animate-spin text-blue-500" />
                 </div>
-              ) : techs.length === 0 ? (
+              ) : filteredTechs.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-slate-500 font-bold">No hay técnicos registrados</div>
-              ) : techs.map(tech => (
+              ) : filteredTechs.map(tech => (
                 <div key={tech.id} className="card">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -429,6 +579,63 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* TAB ADMINISTRADORES */}
+          {tab === 'admins' && user?.role === 'JEF_' && (
+            <div className="w-full">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">Gestión de Administradores</h2>
+                  <p className="text-sm text-slate-400">Total: {filteredAdmins.length}</p>
+                </div>
+                <button onClick={() => setShowAdminModal(true)} className="btn-primary flex items-center gap-2 text-sm px-4">
+                  <UserPlus className="w-4 h-4" /> Nuevo Admin
+                </button>
+              </div>
+
+              <div className="card overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead>
+                      <tr className="bg-slate-900/50 text-slate-400 border-b border-slate-800/80">
+                        <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Código</th>
+                        <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Nombre Completo</th>
+                        <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Teléfono</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {filteredAdmins.slice((adminsPage - 1) * ITEMS_PER_PAGE, adminsPage * ITEMS_PER_PAGE).map(admin => (
+                        <tr key={admin.id} className="hover:bg-slate-900/30 transition group">
+                          <td className="px-6 py-4"><span className="font-mono text-blue-400 bg-blue-500/10 px-2 py-1 rounded font-bold">{admin.access_code}</span></td>
+                          <td className="px-6 py-4"><p className="text-white font-semibold">{admin.first_name} {admin.last_name_pat}</p></td>
+                          <td className="px-6 py-4 text-slate-300">{admin.phone}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+
+                  </table>
+                </div>
+
+                {Math.ceil(filteredAdmins.length / ITEMS_PER_PAGE) > 1 && (
+                  <div className="flex items-center justify-between mt-4 px-4 py-2 border-t border-slate-800/80">
+                    <p className="text-xs text-slate-500 font-medium">Mostrando {(adminsPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(adminsPage * ITEMS_PER_PAGE, filteredAdmins.length)} de {filteredAdmins.length}</p>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setAdminsPage(p => Math.max(1, p - 1))} disabled={adminsPage === 1}
+                        className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-50 hover:bg-slate-800 hover:text-white transition">
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs font-bold text-white px-2">{adminsPage} / {Math.ceil(filteredAdmins.length / ITEMS_PER_PAGE)}</span>
+                      <button onClick={() => setAdminsPage(p => Math.min(Math.ceil(filteredAdmins.length / ITEMS_PER_PAGE), p + 1))} disabled={adminsPage === Math.ceil(filteredAdmins.length / ITEMS_PER_PAGE)}
+                        className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-50 hover:bg-slate-800 hover:text-white transition">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
           {/* TAB CLIENTES */}
           {tab === 'clients' && (
             <div className="card overflow-hidden overflow-x-auto p-0">
@@ -441,7 +648,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-900">
-                  {clients.map(client => (
+                  {filteredClients.slice((clientsPage - 1) * ITEMS_PER_PAGE, clientsPage * ITEMS_PER_PAGE).map(client => (
                     <tr key={client.id} className="hover:bg-slate-900/20 transition">
                       <td className="px-4 py-3">
                         <p className="text-sm font-bold text-slate-200">{client.first_name} {client.last_name_pat}</p>
@@ -465,6 +672,24 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Paginación Clientes */}
+              {Math.ceil(filteredClients.length / ITEMS_PER_PAGE) > 1 && (
+                <div className="flex items-center justify-between mt-4 px-4 py-2 border-t border-slate-800/80">
+                  <p className="text-xs text-slate-500 font-medium">Mostrando {(clientsPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(clientsPage * ITEMS_PER_PAGE, filteredClients.length)} de {filteredClients.length}</p>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setClientsPage(p => Math.max(1, p - 1))} disabled={clientsPage === 1}
+                      className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-50 hover:bg-slate-800 hover:text-white transition">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-bold text-white px-2">{clientsPage} / {Math.ceil(filteredClients.length / ITEMS_PER_PAGE)}</span>
+                    <button onClick={() => setClientsPage(p => Math.min(Math.ceil(filteredClients.length / ITEMS_PER_PAGE), p + 1))} disabled={clientsPage === Math.ceil(filteredClients.length / ITEMS_PER_PAGE)}
+                      className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-50 hover:bg-slate-800 hover:text-white transition">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -705,6 +930,32 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Admin */}
+      {showAdminModal && user?.role === 'JEF_' && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center p-4 md:p-6 border-b border-slate-800">
+              <h3 className="text-lg font-extrabold text-white">Nuevo Administrador</h3>
+              <button onClick={() => setShowAdminModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={createAdmin} className="p-4 md:p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">Nombre</label><input type="text" className="input-base" required value={adminForm.first_name} onChange={e => setAdminForm({...adminForm, first_name: e.target.value})} /></div>
+                <div><label className="label">Ap. Paterno</label><input type="text" className="input-base" required value={adminForm.last_name_pat} onChange={e => setAdminForm({...adminForm, last_name_pat: e.target.value})} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">Ap. Materno</label><input type="text" className="input-base" required value={adminForm.last_name_mat} onChange={e => setAdminForm({...adminForm, last_name_mat: e.target.value})} /></div>
+                <div><label className="label">Teléfono</label><input type="text" className="input-base" required value={adminForm.phone} onChange={e => setAdminForm({...adminForm, phone: e.target.value})} /></div>
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800/80">
+                <button type="button" onClick={() => setShowAdminModal(false)} className="btn-secondary">Cancelar</button>
+                <button type="submit" className="btn-primary px-6">Crear Cuenta</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

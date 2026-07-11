@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
 import { Clock, AlertTriangle, CheckCircle, ChevronRight, Loader, User, MapPin, Bell } from 'lucide-react'
+import { getSocket } from '../../services/socket'
 import BottomNav from '../../components/layout/BottomNav'
 import MobileHeader from '../../components/layout/MobileHeader'
 import Sidebar from '../../components/layout/Sidebar'
@@ -26,6 +27,26 @@ export default function TechDashboard() {
     fetchTickets()
     fetchNotifications()
     fetchPerformance()
+    
+    // Socket.io integration
+    const socket = getSocket()
+    if (!socket) return
+
+    const handleNewNotification = (notification) => {
+      setNotifications(prev => [notification, ...prev])
+      setUnreadCount(count => count + 1)
+      // Recargar tickets y performance si la notificación es sobre un ticket
+      if (notification.ticket_id) {
+        fetchTickets()
+        fetchPerformance()
+      }
+    }
+
+    socket.on('new_notification', handleNewNotification)
+
+    return () => {
+      socket.off('new_notification', handleNewNotification)
+    }
   }, [])
 
   const fetchTickets = async () => {
@@ -141,103 +162,127 @@ export default function TechDashboard() {
           />
         )}
 
-        {/* Tabs */}
-        <div className="bg-slate-950 border-b border-slate-900 px-4 md:px-8">
-          <div className="flex max-w-md mx-auto">
-            <button
-              onClick={() => setTab('pendientes')}
-              className={`flex-1 py-4 text-center text-xs uppercase tracking-wider font-extrabold border-b-2 transition ${
-                tab === 'pendientes'
-                  ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-300'
-              }`}
+        {/* Bloqueo WIP Extremo */}
+        {tickets.active.some(t => ['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(t.status)) ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-24 h-24 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <AlertTriangle className="w-12 h-12 text-rose-500" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wide">Acceso Bloqueado</h2>
+            <p className="text-slate-400 mb-8 max-w-sm mx-auto">
+              Tienes una tarea en ejecución activa. Por protocolo de seguridad, no puedes aceptar ni ver otros tickets hasta que cierres o reportes la actual.
+            </p>
+            <button 
+              onClick={() => {
+                const lockedT = tickets.active.find(t => ['EN_CAMINO', 'EJECUCION_ACTIVA'].includes(t.status))
+                navigate(`/tech/ticket/${lockedT.id}`)
+              }}
+              className="btn-primary flex items-center gap-2"
             >
-              Pendientes
-              {tickets.active.length > 0 && (
-                <span className="ml-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/20 text-[10px] px-2 py-0.5 rounded-full font-bold">{tickets.active.length}</span>
-              )}
-            </button>
-            <button
-              onClick={() => setTab('pre-cerrados')}
-              className={`flex-1 py-4 text-center text-xs uppercase tracking-wider font-extrabold border-b-2 transition ${
-                tab === 'pre-cerrados'
-                  ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              Pre-Cerrados
-              {tickets.waiting_close.length > 0 && (
-                <span className="ml-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 text-[10px] px-2 py-0.5 rounded-full font-bold">{tickets.waiting_close.length}</span>
-              )}
+              Ir a mi Tarea Activa <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
-        
-        {/* Lista tickets */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 pb-nav flex flex-col gap-3 max-w-3xl mx-auto w-full md:px-8">
-          {loading ? (
-            <div className="col-span-full flex justify-center py-12">
-              <Loader className="w-8 h-8 text-blue-500 animate-spin" />
-            </div>
-          ) : displayed.length === 0 ? (
-            <div className="col-span-full py-12">
-              <EmptyState
-                title={tab === 'pendientes' ? 'No tienes tickets pendientes' : 'Sin tickets pre-cerrados'}
-                description="¡Buen trabajo! 🎉"
-              />
-            </div>
-          ) : (
-            displayed.map(ticket => {
-              const isExtrema = ticket.priority === 'EXTREMA'
-              return (
-                <div
-                  key={ticket.id}
-                  onClick={() => navigate(`/tech/ticket/${ticket.id}`)}
-                  className={`bg-slate-900/30 border border-slate-800/50 rounded-lg p-3.5 cursor-pointer transition-colors duration-200 flex flex-col gap-2 ${
-                    isExtrema
-                      ? 'border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/5'
-                      : 'hover:border-slate-700 hover:bg-slate-800/40'
+        ) : (
+          <>
+            {/* Tabs */}
+            <div className="bg-slate-950 border-b border-slate-900 px-4 md:px-8">
+              <div className="flex max-w-md mx-auto">
+                <button
+                  onClick={() => setTab('pendientes')}
+                  className={`flex-1 py-4 text-center text-xs uppercase tracking-wider font-extrabold border-b-2 transition ${
+                    tab === 'pendientes'
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  {isExtrema && (
-                    <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 rounded-md px-2 py-1">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
-                      <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">ATENCIÓN URGENTE</span>
-                    </div>
+                  Pendientes
+                  {tickets.active.length > 0 && (
+                    <span className="ml-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/20 text-[10px] px-2 py-0.5 rounded-full font-bold">{tickets.active.length}</span>
                   )}
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-300 font-medium bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800/80">
-                        #{ticket.code}
-                      </span>
-                      <StatusBadge status={ticket.status} />
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
-                      <Clock className="w-3 h-3 text-slate-600" />
-                      {new Date(ticket.created_at).toLocaleDateString('es-PE')}
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-slate-300 line-clamp-2 leading-relaxed">
-                    {ticket.description}
-                  </p>
-
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex gap-1.5 items-center">
-                      <PriorityBadge priority={ticket.priority} />
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate max-w-[120px]">{ticket.address || 'Sin dirección'}</span>
-                      <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                    </div>
-                  </div>
+                </button>
+                <button
+                  onClick={() => setTab('pre-cerrados')}
+                  className={`flex-1 py-4 text-center text-xs uppercase tracking-wider font-extrabold border-b-2 transition ${
+                    tab === 'pre-cerrados'
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  Pre-Cerrados
+                  {tickets.waiting_close.length > 0 && (
+                    <span className="ml-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 text-[10px] px-2 py-0.5 rounded-full font-bold">{tickets.waiting_close.length}</span>
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            {/* Lista tickets */}
+            <div className="flex-1 overflow-y-auto px-4 py-6 pb-nav flex flex-col gap-3 max-w-3xl mx-auto w-full md:px-8">
+              {loading ? (
+                <div className="col-span-full flex justify-center py-12">
+                  <Loader className="w-8 h-8 text-blue-500 animate-spin" />
                 </div>
-              )
-            })
-          )}
-        </div>
+              ) : displayed.length === 0 ? (
+                <div className="col-span-full py-12">
+                  <EmptyState
+                    title={tab === 'pendientes' ? 'No tienes tickets pendientes' : 'Sin tickets pre-cerrados'}
+                    description="¡Buen trabajo! 🎉"
+                  />
+                </div>
+              ) : (
+                displayed.map(ticket => {
+                  const isExtrema = ticket.priority === 'EXTREMA'
+                  return (
+                    <div
+                      key={ticket.id}
+                      onClick={() => navigate(`/tech/ticket/${ticket.id}`)}
+                      className={`bg-slate-900/30 border border-slate-800/50 rounded-lg p-3.5 cursor-pointer transition-colors duration-200 flex flex-col gap-2 ${
+                        isExtrema
+                          ? 'border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/5'
+                          : 'hover:border-slate-700 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      {isExtrema && (
+                        <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 rounded-md px-2 py-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                          <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">ATENCIÓN URGENTE</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-300 font-medium bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800/80">
+                            #{ticket.code}
+                          </span>
+                          <StatusBadge status={ticket.status} />
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                          <Clock className="w-3 h-3 text-slate-600" />
+                          {new Date(ticket.created_at).toLocaleDateString('es-PE')}
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-slate-300 line-clamp-2 leading-relaxed">
+                        {ticket.description}
+                      </p>
+
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex gap-1.5 items-center">
+                          <PriorityBadge priority={ticket.priority} />
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                          <MapPin className="w-3 h-3" />
+                          <span className="truncate max-w-[120px]">{ticket.address || 'Sin dirección'}</span>
+                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </>
+        )}
 
         <BottomNav role="ESP_" />
       </div>
